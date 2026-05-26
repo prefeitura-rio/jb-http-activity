@@ -1,5 +1,104 @@
 <template>
   <div class="tab-auth">
-    <p>Aba Auth em construcao</p>
+    <div class="field">
+      <label>Tipo de Autenticacao</label>
+      <select v-model="authType">
+        <option value="none">None</option>
+        <option value="bearer">Bearer Token</option>
+        <option value="oauth2_client_credentials">OAuth 2.0 - Client Credentials</option>
+      </select>
+    </div>
+
+    <div v-if="authType === 'bearer'" class="field">
+      <label>Token</label>
+      <div class="token-row">
+        <input v-model="bearerToken" placeholder="Token ou {{var}}" type="text" />
+        <VariablePicker :schema="schema" @insert="v => bearerToken += v" />
+      </div>
+    </div>
+
+    <div v-if="authType === 'oauth2_client_credentials'" class="oauth-fields">
+      <div class="field">
+        <label>Token URL</label>
+        <input v-model="tokenUrl" placeholder="https://auth.exemplo.com/oauth/token" />
+      </div>
+      <div class="field">
+        <label>Client ID</label>
+        <input v-model="clientId" placeholder="client-id" />
+      </div>
+      <div class="field">
+        <label>Client Secret</label>
+        <div class="secret-row">
+          <input v-model="clientSecret" :type="showSecret ? 'text' : 'password'" placeholder="••••••••••" />
+          <button class="btn-eye" @click="showSecret = !showSecret">{{ showSecret ? 'O' : 'O' }}</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Scope (opcional)</label>
+        <input v-model="scope" placeholder="divida:read boleto:write" />
+      </div>
+      <button class="btn-test" @click="testConnection">Testar conexao</button>
+      <div v-if="testResult" class="test-result" :class="{ success: testOk, fail: !testOk }">
+        {{ testResult }}
+      </div>
+    </div>
   </div>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+import VariablePicker from '../shared/VariablePicker.vue'
+import axios from 'axios'
+
+const props = defineProps({
+  schema: { type: Array, default: () => [] }
+})
+
+const authType = ref('none')
+const bearerToken = ref('')
+const tokenUrl = ref('')
+const clientId = ref('')
+const clientSecret = ref('')
+const scope = ref('')
+const showSecret = ref(false)
+const testResult = ref('')
+const testOk = ref(false)
+
+async function testConnection() {
+  testResult.value = 'Testando...'
+  testOk.value = false
+  try {
+    const res = await axios.post(tokenUrl.value, null, {
+      params: {
+        grant_type: 'client_credentials',
+        client_id: clientId.value,
+        client_secret: clientSecret.value,
+        ...(scope.value ? { scope: scope.value } : {})
+      },
+      timeout: 10000
+    })
+    if (res.data && res.data.access_token) {
+      testResult.value = 'Token obtido com sucesso'
+      testOk.value = true
+    } else {
+      testResult.value = 'Resposta inesperada: sem access_token'
+    }
+  } catch (err) {
+    testResult.value = 'Falha: ' + (err.message || 'erro de conexao')
+  }
+}
+</script>
+
+<style scoped>
+.tab-auth { display: flex; flex-direction: column; gap: 10px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: #444; margin-bottom: 3px; }
+.field select, .field input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; box-sizing: border-box; }
+.token-row, .secret-row { display: flex; gap: 4px; }
+.token-row input, .secret-row input { flex: 1; }
+.oauth-fields { display: flex; flex-direction: column; gap: 10px; }
+.btn-eye { background: #eee; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 4px 8px; }
+.btn-test { background: #0070d2; color: #fff; border: none; border-radius: 4px; padding: 8px; cursor: pointer; font-size: 13px; }
+.test-result { font-size: 12px; padding: 6px; border-radius: 3px; }
+.test-result.success { background: #d4edda; color: #155724; }
+.test-result.fail { background: #f8d7da; color: #721c24; }
+</style>

@@ -1,11 +1,6 @@
 <template>
   <div class="activity-name">
-    <input
-      type="text"
-      v-model="name"
-      placeholder="Nome da atividade"
-      @input="onChange"
-    />
+    <input type="text" v-model="name" placeholder="Nome da atividade" @input="onChange" />
   </div>
 </template>
 
@@ -14,24 +9,14 @@ import { ref } from 'vue'
 
 const name = ref('')
 
-function onChange() {
-  const postmonger = window.Postmonger ? new window.Postmonger.Session() : null
-  if (postmonger) {
-    postmonger.trigger('updateActivity', { activityName: name.value })
-  }
-}
+function setName(val) { name.value = val }
+function getName() { return name.value }
+function onChange() {}
+
+defineExpose({ setName, getName })
 </script>
 
 <style scoped>
-.activity-name {
-  margin-bottom: 12px;
-}
-.activity-name input {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-  box-sizing: border-box;
-}
+.activity-name { margin-bottom: 12px; }
+.activity-name input { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
 </style>
