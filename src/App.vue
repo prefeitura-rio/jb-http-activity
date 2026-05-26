@@ -88,6 +88,8 @@ onMounted(() => {
       }
       if (data && data.name) {
         if (activityNameRef.value) activityNameRef.value.setName(data.name)
+      } else if (config.value && config.value.activityName) {
+        if (activityNameRef.value) activityNameRef.value.setName(config.value.activityName)
       }
       connection.trigger('ready')
       connection.trigger('requestSchema')
@@ -102,7 +104,9 @@ onMounted(() => {
     })
 
     connection.on('clickedNext', function() {
+      const name = activityNameRef.value ? activityNameRef.value.getName() : ''
       const payload = {
+        name,
         metaData: { isConfigured: true },
         arguments: {
           execute: {
