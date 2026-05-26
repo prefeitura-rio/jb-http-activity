@@ -34,7 +34,7 @@
       "retryCount": 2,
       "retryDelay": 2000,
       "concurrentRequests": 5,
-      "url": "https://jb-http-activity-xxxx.run.app/execute",
+      "url": "SUBSTITUIR_PELA_URL_NGROK/execute",
       "verb": "POST",
       "useJwt": true
     }
@@ -42,22 +42,22 @@
   "configurationArguments": {
     "applicationExtensionKey": "SUBSTITUIR_PELA_ACTIVITY_KEY_DO_SFMC",
     "save": {
-      "url": "https://jb-http-activity-xxxx.run.app/save",
+      "url": "SUBSTITUIR_PELA_URL_NGROK/save",
       "verb": "POST",
       "useJwt": true
     },
     "validate": {
-      "url": "https://jb-http-activity-xxxx.run.app/validate",
+      "url": "SUBSTITUIR_PELA_URL_NGROK/validate",
       "verb": "POST",
       "useJwt": true
     },
     "publish": {
-      "url": "https://jb-http-activity-xxxx.run.app/publish",
+      "url": "SUBSTITUIR_PELA_URL_NGROK/publish",
       "verb": "POST",
       "useJwt": true
     },
     "stop": {
-      "url": "https://jb-http-activity-xxxx.run.app/stop",
+      "url": "SUBSTITUIR_PELA_URL_NGROK/stop",
       "verb": "POST",
       "useJwt": true
     }
