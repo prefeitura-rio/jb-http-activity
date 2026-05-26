@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const emit = defineEmits(['insert'])
 
@@ -25,9 +25,15 @@ const props = defineProps({
 })
 
 const selected = ref('')
-const contactVars = ['{{Contact.Key}}', '{{Contact.Attribute.DE.CPF}}', '{{Contact.Attribute.DE.NOME}}', '{{Contact.Attribute.DE.TELEFONE}}', '{{Contact.Attribute.DE.TOKEN}}']
 const contextVars = ['{{Context.IsTest}}', '{{Context.DefinitionId}}']
 const interactionVars = ['{{Interaction.HTTP-1.httpStatusCode}}', '{{Interaction.HTTP-1.httpSuccess}}']
+
+const contactVars = computed(() => {
+  if (!props.schema || !props.schema.length) {
+    return ['{{Contact.Key}}']
+  }
+  return props.schema.map(s => '{{' + s.key + '}}')
+})
 
 function insert() {
   if (selected.value) {
