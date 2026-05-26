@@ -46,9 +46,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import VariablePicker from '../shared/VariablePicker.vue'
 import axios from 'axios'
+import { requestConfig } from '../../store.js'
 
 const props = defineProps({
   schema: { type: Array, default: () => [] }
@@ -63,6 +64,24 @@ const scope = ref('')
 const showSecret = ref(false)
 const testResult = ref('')
 const testOk = ref(false)
+
+function syncAuth() {
+  if (authType.value === 'none') {
+    requestConfig.auth = { type: 'none' }
+  } else if (authType.value === 'bearer') {
+    requestConfig.auth = { type: 'bearer', token: bearerToken.value }
+  } else if (authType.value === 'oauth2_client_credentials') {
+    requestConfig.auth = {
+      type: 'oauth2_client_credentials',
+      tokenUrl: tokenUrl.value,
+      clientId: clientId.value,
+      clientSecret: clientSecret.value,
+      scope: scope.value
+    }
+  }
+}
+
+watch([authType, bearerToken, tokenUrl, clientId, clientSecret, scope], syncAuth, { deep: true })
 
 async function testConnection() {
   testResult.value = 'Testando...'

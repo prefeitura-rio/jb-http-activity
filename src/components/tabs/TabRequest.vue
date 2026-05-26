@@ -62,10 +62,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import KeyValueEditor from '../shared/KeyValueEditor.vue'
 import VariablePicker from '../shared/VariablePicker.vue'
 import BodyEditor from '../shared/BodyEditor.vue'
+import { requestConfig } from '../../store.js'
 
 const props = defineProps({
   schema: { type: Array, default: () => [] },
@@ -82,6 +83,21 @@ const timeout = ref(props.initialData.timeout || 30000)
 const retryCount = ref(props.initialData.retryCount || 0)
 const retryDelay = ref(props.initialData.retryDelay || 1000)
 const treatErrorsAsOutput = ref(props.initialData.treatErrorsAsOutput || false)
+
+function syncStore() {
+  requestConfig.method = method.value
+  requestConfig.url = url.value
+  requestConfig.headers = headers.value
+  requestConfig.queryParams = queryParams.value
+  requestConfig.body = body.value
+  requestConfig.contentType = contentType.value
+  requestConfig.timeout = timeout.value
+  requestConfig.retryCount = retryCount.value
+  requestConfig.retryDelay = retryDelay.value
+  requestConfig.treatErrorsAsOutput = treatErrorsAsOutput.value
+}
+
+watch([method, url, headers, queryParams, body, contentType, timeout, retryCount, retryDelay, treatErrorsAsOutput], syncStore, { deep: true })
 </script>
 
 <style scoped>

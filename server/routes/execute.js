@@ -68,6 +68,10 @@ module.exports = async function executeRoute(req, res) {
       ...mapped
     }
 
+    if (config._preview) {
+      outArgs._rawBody = httpResponse.data
+    }
+
     logger.info({
       journeyId: req.body && req.body.journeyId,
       contactKey: req.body && req.body.contactKey,

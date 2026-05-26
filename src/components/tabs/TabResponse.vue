@@ -51,6 +51,7 @@ import { ref, computed } from 'vue'
 import ResponseMapping from '../shared/ResponseMapping.vue'
 import FunctionHelperModal from '../shared/FunctionHelperModal.vue'
 import axios from 'axios'
+import { requestConfig } from '../../store.js'
 
 const props = defineProps({
   initialData: { type: Object, default: () => ({}) }
@@ -76,13 +77,14 @@ async function executeTest() {
   try {
     const res = await axios.post('/execute', {
       inArguments: [
-        { method: 'GET' },
-        { url: 'https://jsonplaceholder.typicode.com/todos/1' },
-        { headers: [] },
-        { body: '' },
-        { auth: { type: 'none' } },
+        { method: requestConfig.method },
+        { url: requestConfig.url },
+        { headers: requestConfig.headers },
+        { queryParams: requestConfig.queryParams },
+        { body: requestConfig.body },
+        { auth: requestConfig.auth },
         { responseMapping: responseMapping.value },
-        { treatErrorsAsOutput: true, timeout: 30000 }
+        { treatErrorsAsOutput: true, timeout: requestConfig.timeout, _preview: true }
       ]
     })
     const mapped = {}
@@ -92,7 +94,7 @@ async function executeTest() {
     testResponse.value = {
       statusCode: res.data.httpStatusCode,
       duration: 0,
-      body: JSON.stringify({ title: 'delectus aut autem', userId: 1, id: 1 }, null, 2),
+      body: res.data._rawBody || JSON.stringify(res.data, null, 2),
       mapped: { ...mapped, httpStatusCode: res.data.httpStatusCode, httpSuccess: res.data.httpSuccess }
     }
   } catch (err) {
