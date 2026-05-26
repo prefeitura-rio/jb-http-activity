@@ -7,10 +7,10 @@
       </button>
     </div>
     <div class="tab-content">
-      <TabRequest v-if="activeTab === 'request'" ref="requestRef" :schema="schema" :initial-data="config" />
-      <TabAuth v-if="activeTab === 'auth'" ref="authRef" :schema="schema" />
-      <TabResponse v-if="activeTab === 'response'" ref="responseRef" :initial-data="config" />
-      <TabLogs v-if="activeTab === 'logs'" ref="logsRef" :initial-data="config" />
+      <TabRequest v-show="activeTab === 'request'" ref="requestRef" :schema="schema" :initial-data="config" />
+      <TabAuth v-show="activeTab === 'auth'" ref="authRef" :schema="schema" />
+      <TabResponse v-show="activeTab === 'response'" ref="responseRef" :initial-data="config" />
+      <TabLogs v-show="activeTab === 'logs'" ref="logsRef" :initial-data="config" />
     </div>
   </div>
 </template>
