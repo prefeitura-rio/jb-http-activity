@@ -6,6 +6,7 @@ const validateRoute = require('./routes/validate')
 const publishRoute = require('./routes/publish')
 const saveRoute = require('./routes/save')
 const stopRoute = require('./routes/stop')
+const logsRoute = require('./routes/logs')
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason)
@@ -33,6 +34,7 @@ app.post('/validate', jwtVerify, validateRoute)
 app.post('/publish', jwtVerify, publishRoute)
 app.post('/save', jwtVerify, saveRoute)
 app.post('/stop', jwtVerify, stopRoute)
+app.get('/logs', logsRoute)
 
 app.listen(PORT, () => {
   console.log(`jb-http-activity running on port ${PORT}`)

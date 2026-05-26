@@ -2,15 +2,18 @@ const { request } = require('../lib/httpClient')
 const { resolveAuth } = require('../lib/authHandler')
 const { extract } = require('../lib/responseMapper')
 const logger = require('../lib/structuredLogger')
+const logStore = require('../lib/logStore')
 
 module.exports = async function executeRoute(req, res) {
+  let config = {}
+
   try {
     const inArgs = req.body && req.body.inArguments
     if (!inArgs || !Array.isArray(inArgs)) {
       return res.status(400).json({ error: 'inArguments ausente ou invalido' })
     }
 
-    const config = inArgs.reduce((acc, arg) => ({ ...acc, ...arg }), {})
+    config = inArgs.reduce((acc, arg) => ({ ...acc, ...arg }), {})
 
     const headers = safeParse(config.headers, [])
     const queryParams = safeParse(config.queryParams, [])
@@ -72,9 +75,10 @@ module.exports = async function executeRoute(req, res) {
       outArgs._rawBody = httpResponse.data
     }
 
-    logger.info({
+    const logEntry = {
       journeyId: req.body && req.body.journeyId,
       contactKey: req.body && req.body.contactKey,
+      activityId: req.body && req.body.activityId,
       method: config.method,
       url: config.url,
       httpStatus: statusCode,
@@ -83,8 +87,14 @@ module.exports = async function executeRoute(req, res) {
       success: isSuccess,
       treatErrorsAsOutput: config.treatErrorsAsOutput,
       outArguments: outArgs,
-      errorSummary: null
-    })
+      errorSummary: null,
+      message: isSuccess
+        ? `HTTP ${statusCode} (${durationMs}ms)`
+        : `HTTP ${statusCode} - ${statusClass}`
+    }
+
+    logger.info(logEntry)
+    logStore.push(logEntry)
 
     const treatErrors = config.treatErrorsAsOutput === true
 
@@ -108,18 +118,23 @@ module.exports = async function executeRoute(req, res) {
       httpSuccess: false
     }
 
-    logger.error({
+    const logEntry = {
       journeyId: req.body && req.body.journeyId,
       contactKey: req.body && req.body.contactKey,
-      method: req.body && req.body.inArguments ? 'unknown' : 'unknown',
-      url: 'unknown',
+      activityId: req.body && req.body.activityId,
+      method: 'unknown',
+      url: config ? config.url : 'unknown',
       httpStatus: 0,
       durationMs,
       statusClass: '0xx',
       success: false,
       outArguments: outArgs,
-      errorSummary: err.message || 'Erro interno'
-    })
+      errorSummary: err.message || 'Erro interno',
+      message: `Erro: ${err.message || 'Erro interno do servidor'}`
+    }
+
+    logger.error(logEntry)
+    logStore.push(logEntry)
 
     return res.status(500).json({ error: err.message || 'Erro interno do servidor' })
   }

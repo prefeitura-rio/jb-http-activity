@@ -19,6 +19,7 @@ Substitui o nó de HTTP Request do WeFlow (N8N) durante a migração de broker d
 | CI/CD | GitLab CI → Artifact Registry → Cloud Run |
 | Secrets | GCP Secret Manager |
 | Logs | Cloud Logging → BigQuery → Looker Studio |
+| Logs (store) | In-memory circular buffer (`server/lib/logStore.js`) + `GET /logs` |
 
 ---
 
@@ -42,13 +43,15 @@ jb-http-activity/
 │   │   ├── validate.js        # Lifecycle JB
 │   │   ├── publish.js         # Lifecycle JB
 │   │   ├── save.js            # Lifecycle JB
-│   │   └── stop.js            # Lifecycle JB
+│   │   ├── stop.js            # Lifecycle JB
+│   │   └── logs.js            # GET /logs — retorna logs do logStore
 │   └── lib/
 │       ├── httpClient.js      # Wrapper Axios
 │       ├── authHandler.js     # None / Bearer / OAuth2 client_credentials
 │       ├── expressionParser.js# UPPER(x), ROUND(x,2), IF(cond,v,f), etc (16 funções)
 │       ├── responseMapper.js  # Orquestra expressionParser + dot notation
-│       └── structuredLogger.js# stdout JSON → Cloud Logging → BigQuery
+│       ├── structuredLogger.js# stdout JSON → Cloud Logging → BigQuery
+│       └── logStore.js        # Circular buffer em memória (100 entradas)
 ├── src/                       # Vue.js 3 (Vite)
 │   ├── main.js
 │   ├── App.vue
@@ -205,6 +208,14 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 
 **Decisão:** Um `src/dev/postmonger-mock.js` simula os eventos do Journey Builder em ambiente de desenvolvimento, permitindo testar a UI completa sem conexão com SFMC. Carregado apenas quando `import.meta.env.DEV === true`.
 
+### ADR-005: Logs em memória para feedback imediato na UI
+
+**Decisão:** Um `logStore.js` circular buffer (100 entradas) armazena os últimos logs de execução do `/execute`. Uma rota `GET /logs?type=errors` expõe os erros para a UI (TabLogs), que os exibe ao operador sem depender de Cloud Logging.
+
+**Limitação:** Os logs são voláteis (perdidos no restart) e não persistem histórico completo.
+
+**Futuro (pós-hospedagem GCP):** Substituir a fonte de dados da TabLogs por consultas na API do Cloud Logging, mantendo o `logStore` como fallback rápido. O endpoint `GET /logs` permanece o mesmo — a implementação interna do route muda para buscar do Cloud Logging em vez da memória.
+
 ---
 
 ## Code Review Checklist
@@ -221,13 +232,15 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 - [ ] `treatErrorsAsOutput` respeitado na resposta do `/execute`
 - [ ] Timeout configurável respeitado (1s-100s)
 - [ ] Retry lógica: idempotente (mesmo activityId+definitionInstanceId = mesmo resultado)
+- [ ] logStore.push() chamado em toda execução (sucesso e erro)
+- [ ] `GET /logs?type=errors` retorna apenas execuções com falha
 
 ### Frontend
 - [ ] Postmonger mock funcional em dev
 - [ ] Aba Request: método, URL, headers, params, body, content-type, opções avançadas
 - [ ] Aba Auth: None, Bearer, OAuth2 formulários + "Testar conexão"
 - [ ] Aba Response: built-ins, expressões, FunctionHelperModal, teste com preview
-- [ ] Aba Logs: exibe último erro
+- [ ] Aba Logs: exibe último erro (via `GET /logs?type=errors`)
 - [ ] Schema de outArguments enviado via `trigger('updateActivity')`
 - [ ] `clickedNext` → constrói payload e chama `updateActivity`
 - [ ] Nome da atividade persiste e aparece no canvas
