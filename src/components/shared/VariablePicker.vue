@@ -8,9 +8,10 @@
       <optgroup label="Contexto da Jornada">
         <option v-for="v in contextVars" :key="v" :value="v">{{ v }}</option>
       </optgroup>
-      <optgroup label="Atividades anteriores">
-        <option v-for="v in interactionVars" :key="v" :value="v">{{ v }}</option>
-      </optgroup>
+      <option disabled class="divider">─── Atividades anteriores ───</option>
+      <option disabled class="hint">💡 Digite manualmente:</option>
+      <option disabled class="hint-code" v-text="'{{Interaction.NomeDaAtividade.campo}}'"></option>
+      <option disabled class="hint-code" v-text="'Ex: {{Interaction.ConsultaDivida.status}}'"></option>
     </select>
   </div>
 </template>
@@ -26,7 +27,6 @@ const props = defineProps({
 
 const selected = ref('')
 const contextVars = ['{{Context.IsTest}}', '{{Context.DefinitionId}}']
-const interactionVars = ['{{Interaction.HTTP-1.httpStatusCode}}', '{{Interaction.HTTP-1.httpSuccess}}']
 
 const contactVars = computed(() => {
   if (!props.schema || !props.schema.length) {
