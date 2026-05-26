@@ -1,0 +1,79 @@
+{
+  "workflowApiVersion": "1.1",
+  "metaData": {
+    "icon": "icons/icon.png",
+    "iconSmall": "icons/iconSmall.png",
+    "category": "custom",
+    "isConfigured": false
+  },
+  "type": "REST",
+  "lang": {
+    "en-US": {
+      "name": "HTTP Request",
+      "description": "Generic HTTP request node for Journey Builder"
+    }
+  },
+  "arguments": {
+    "execute": {
+      "inArguments": [
+        { "activityName": "" },
+        { "method": "GET" },
+        { "url": "" },
+        { "headers": "[]" },
+        { "queryParams": "[]" },
+        { "body": "" },
+        { "auth": "{}" },
+        { "responseMapping": "[]" },
+        { "treatErrorsAsOutput": false },
+        { "timeout": 30000 },
+        { "retryCount": 0 },
+        { "retryDelay": 1000 }
+      ],
+      "outArguments": [],
+      "timeout": 30000,
+      "retryCount": 2,
+      "retryDelay": 2000,
+      "concurrentRequests": 5,
+      "url": "https://jb-http-activity-xxxx.run.app/execute",
+      "verb": "POST",
+      "useJwt": true
+    }
+  },
+  "configurationArguments": {
+    "applicationExtensionKey": "SUBSTITUIR_PELA_ACTIVITY_KEY_DO_SFMC",
+    "save": {
+      "url": "https://jb-http-activity-xxxx.run.app/save",
+      "verb": "POST",
+      "useJwt": true
+    },
+    "validate": {
+      "url": "https://jb-http-activity-xxxx.run.app/validate",
+      "verb": "POST",
+      "useJwt": true
+    },
+    "publish": {
+      "url": "https://jb-http-activity-xxxx.run.app/publish",
+      "verb": "POST",
+      "useJwt": true
+    },
+    "stop": {
+      "url": "https://jb-http-activity-xxxx.run.app/stop",
+      "verb": "POST",
+      "useJwt": true
+    }
+  },
+  "userInterfaces": {
+    "configurationSupportsReadOnlyMode": true,
+    "configInspector": {
+      "size": "scm-lg",
+      "emptyIframe": false
+    }
+  },
+  "schema": {
+    "arguments": {
+      "execute": {
+        "outArguments": []
+      }
+    }
+  }
+}

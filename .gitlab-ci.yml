@@ -1,0 +1,52 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE: europe-west1-docker.pkg.dev/prefeitura-rj/czrm/jb-http-activity:$CI_COMMIT_SHA
+  REGION: us-east1
+  SERVICE: jb-http-activity
+
+build:
+  stage: build
+  image: node:20-alpine
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+
+docker:
+  stage: build
+  needs: [build]
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - apk add --no-cache nodejs npm
+    - npm ci
+    - docker build -t $IMAGE .
+    - docker push $IMAGE
+
+deploy:
+  stage: deploy
+  image: google/cloud-sdk:alpine
+  only:
+    - main
+  script:
+    - gcloud run deploy $SERVICE
+        --image $IMAGE
+        --region $REGION
+        --platform managed
+        --allow-unauthenticated
+        --set-secrets JWT_SECRET=jb-http-activity-jwt:latest
+        --memory 256Mi
+        --cpu 1
+        --min-instances 0
+        --max-instances 10
+        --timeout 120
+    - gcloud logging sinks describe jb-http-activity-bq-sink --quiet 2>/dev/null ||
+      gcloud logging sinks create jb-http-activity-bq-sink
+        "bigquery.googleapis.com/projects/$PROJECT_ID/datasets/jb_http_activity_logs"
+        --log-filter="resource.type=cloud_run_revision AND resource.labels.service_name=$SERVICE"
