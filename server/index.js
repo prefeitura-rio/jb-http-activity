@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const express = require('express')
 const path = require('path')
 const jwtVerify = require('./middleware/jwtVerify')
@@ -34,7 +36,16 @@ app.post('/validate', jwtVerify, validateRoute)
 app.post('/publish', jwtVerify, publishRoute)
 app.post('/save', jwtVerify, saveRoute)
 app.post('/stop', jwtVerify, stopRoute)
+
 app.get('/logs', logsRoute)
+
+app.get('/config.js', (req, res) => {
+  res.redirect('/config.json')
+})
+
+app.get('/config.json/config.js', (req, res) => {
+  res.redirect('/config.json')
+})
 
 app.listen(PORT, () => {
   console.log(`jb-http-activity running on port ${PORT}`)

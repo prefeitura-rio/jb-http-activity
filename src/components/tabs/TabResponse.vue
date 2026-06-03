@@ -47,7 +47,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import ResponseMapping from '../shared/ResponseMapping.vue'
 import FunctionHelperModal from '../shared/FunctionHelperModal.vue'
 import axios from 'axios'
@@ -57,11 +57,45 @@ const props = defineProps({
   initialData: { type: Object, default: () => ({}) }
 })
 
-const responseMapping = ref(props.initialData.responseMapping || [])
+const responseMapping = ref([])
 const showFunctions = ref(false)
 const testing = ref(false)
 const testResponse = ref(null)
 const testError = ref('')
+
+function parseArray(value) {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed : []
+    } catch (e) {
+      return []
+    }
+  }
+  return []
+}
+
+function loadInitialData(data) {
+  if (!data) return
+  responseMapping.value = parseArray(data.responseMapping)
+}
+
+function getData() {
+  return {
+    responseMapping: responseMapping.value || []
+  }
+}
+
+defineExpose({ getData })
+
+watch(
+  () => props.initialData,
+  (data) => {
+    loadInitialData(data)
+  },
+  { deep: true, immediate: true }
+)
 
 const allVariables = computed(() => {
   const builtins = ['{{Interaction.HTTP-1.httpStatusCode}}', '{{Interaction.HTTP-1.httpStatusClass}}', '{{Interaction.HTTP-1.httpSuccess}}']
@@ -87,10 +121,12 @@ async function executeTest() {
         { treatErrorsAsOutput: true, timeout: requestConfig.timeout, _preview: true }
       ]
     })
+
     const mapped = {}
     for (const m of responseMapping.value) {
       if (m.outputName) mapped[m.outputName] = res.data[m.outputName]
     }
+
     testResponse.value = {
       statusCode: res.data.httpStatusCode,
       duration: 0,
@@ -107,9 +143,11 @@ async function executeTest() {
 function mappedClass(val) {
   return { success: val !== null && val !== '', fail: val === null || val === '' }
 }
+
 function mappedText(key, val) {
   return key + '  ->  "' + (val != null ? val : '') + '"'
 }
+
 function copyAll() {
   navigator.clipboard.writeText(allVariables.value.join('\n'))
 }
@@ -124,12 +162,10 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .builtin-list code, .builtin-vars code { font-size: 12px; font-family: monospace; }
 .builtin-vars { margin-top: 6px; padding-top: 6px; border-top: 1px solid #eee; }
 .builtin-vars code { color: #0070d2; }
-.mapping-section { }
 .all-vars-section { background: #f0f7ff; border: 1px solid #cce5ff; border-radius: 4px; padding: 8px; }
 .vars-list { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; }
 .vars-list code { font-size: 12px; font-family: monospace; color: #0070d2; }
 .btn-copy { background: #28a745; color: #fff; border: none; border-radius: 3px; padding: 5px 10px; cursor: pointer; font-size: 12px; }
-.test-section { }
 .btn-exec { background: #0070d2; color: #fff; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; font-size: 13px; }
 .btn-exec:disabled { background: #999; cursor: not-allowed; }
 .test-response { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 8px; margin-top: 8px; }

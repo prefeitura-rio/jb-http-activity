@@ -1,11 +1,13 @@
 <template>
   <div id="app">
     <ActivityName ref="activityNameRef" />
+
     <div class="tabs">
       <button v-for="tab in tabs" :key="tab.id" :class="{ active: activeTab === tab.id }" @click="activeTab = tab.id">
         {{ tab.label }}
       </button>
     </div>
+
     <div class="tab-content">
       <TabRequest v-show="activeTab === 'request'" ref="requestRef" :schema="schema" :initial-data="config" />
       <TabAuth v-show="activeTab === 'auth'" ref="authRef" :schema="schema" />
@@ -37,17 +39,21 @@ const activityNameRef = ref(null)
 const requestRef = ref(null)
 const authRef = ref(null)
 const responseRef = ref(null)
-const logsRef = ref(null)
 
 let connection = null
 
+const BASE_URL = 'https://crewless-unvalued-appear.ngrok-free.dev'
+const EXECUTE_URL = `${BASE_URL}/execute`
+
 function getConfig() {
   const name = activityNameRef.value ? activityNameRef.value.getName() : ''
-  const request = requestRef.value || {}
+
+  const request = requestRef.value?.getData ? requestRef.value.getData() : {}
   const auth = authRef.value || {}
-  const response = responseRef.value || {}
+  const response = responseRef.value?.getData ? responseRef.value.getData() : {}
 
   const authConfig = { type: 'none' }
+
   if (auth.authType === 'bearer') {
     authConfig.type = 'bearer'
     authConfig.token = auth.bearerToken || ''
@@ -76,85 +82,148 @@ function getConfig() {
   }
 }
 
-onMounted(() => {
-  if (window.Postmonger) {
-    connection = new window.Postmonger.Session()
-
-    connection.on('initActivity', function(data) {
-      const args = data && data.arguments && data.arguments.execute && data.arguments.execute.inArguments
-      if (args && args.length) {
-        const merged = args.reduce((acc, arg) => ({ ...acc, ...arg }), {})
-        config.value = merged
-      }
-      if (data && data.name) {
-        if (activityNameRef.value) activityNameRef.value.setName(data.name)
-      } else if (config.value && config.value.activityName) {
-        if (activityNameRef.value) activityNameRef.value.setName(config.value.activityName)
-      }
-      connection.trigger('ready')
-      connection.trigger('requestSchema')
-      connection.trigger('requestEndpoints')
-      connection.trigger('requestInteractionDefaults')
-    })
-
-    connection.on('requestedSchema', function(data) {
-      if (data && data.schema) {
-        schema.value = data.schema
-      }
-    })
-
-    connection.on('clickedNext', function() {
-      const name = activityNameRef.value ? activityNameRef.value.getName() : ''
-      const payload = {
-        name,
-        metaData: { isConfigured: true },
-        arguments: {
-          execute: {
-            inArguments: [getConfig()],
-            outArguments: []
-          }
-        },
-        schema: {
-          arguments: {
-            execute: {
-              outArguments: buildOutArgSchema()
-            }
-          }
-        }
-      }
-      connection.trigger('updateActivity', payload)
-    })
-
-    connection.on('clickedBack', function() {
-      // navegacao padrao
-    })
-  } else if (import.meta.env.DEV) {
-    console.log('[DEV] Postmonger nao disponivel - usando ambiente dev')
-    if (activityNameRef.value) activityNameRef.value.setName('Minha Activity')
-  }
-})
-
-function buildOutArgSchema() {
-  const response = responseRef.value || {}
+function getOutputDefinitions() {
+  const response = responseRef.value?.getData ? responseRef.value.getData() : {}
   const mappings = response.responseMapping || []
-  const outArgs = {}
 
-  outArgs.httpStatusCode = { dataType: 'number', direction: 'out', isNullable: true, access: 'visible' }
-  outArgs.httpStatusClass = { dataType: 'text', direction: 'out', isNullable: true, access: 'visible' }
-  outArgs.httpSuccess = { dataType: 'boolean', direction: 'out', isNullable: true, access: 'visible' }
+  const outputs = [
+    { name: 'httpStatusCode', dataType: 'number', defaultValue: 0 },
+    { name: 'httpStatusClass', dataType: 'text', defaultValue: '' },
+    { name: 'httpSuccess', dataType: 'boolean', defaultValue: false }
+  ]
 
   for (const m of mappings) {
     if (m.outputName) {
-      outArgs[m.outputName] = {
-        dataType: m.type || 'text',
-        direction: 'out',
-        isNullable: true,
-        access: 'visible'
+      outputs.push({
+        name: m.outputName,
+        dataType: mapDataType(m.type),
+        defaultValue: getDefaultValue(m.type)
+      })
+    }
+  }
+
+  return outputs
+}
+
+function getOutArgumentsValues() {
+  return getOutputDefinitions().map(o => ({
+    [o.name]: o.defaultValue
+  }))
+}
+
+function getOutArgumentsSchema() {
+  return getOutputDefinitions().map(o => ({
+    [o.name]: {
+      dataType: o.dataType,
+      direction: 'out',
+      access: 'visible',
+      isNullable: true
+    }
+  }))
+}
+
+function mapDataType(type) {
+  if (type === 'number') return 'number'
+  if (type === 'boolean') return 'boolean'
+  if (type === 'date') return 'date'
+  return 'text'
+}
+
+function getDefaultValue(type) {
+  if (type === 'number') return 0
+  if (type === 'boolean') return false
+  return ''
+}
+
+onMounted(() => {
+  connection = new window.Postmonger.Session()
+
+  connection.on('initActivity', function(data) {
+    console.log('INIT RECEBIDO', data)
+
+    const args = data && data.arguments && data.arguments.execute && data.arguments.execute.inArguments
+
+    if (args && args.length) {
+      config.value = args.reduce((acc, arg) => ({ ...acc, ...arg }), {})
+    }
+
+    if (data && data.name && activityNameRef.value) {
+      activityNameRef.value.setName(data.name)
+    } else if (config.value.activityName && activityNameRef.value) {
+      activityNameRef.value.setName(config.value.activityName)
+    }
+
+    connection.trigger('requestSchema')
+  })
+
+  connection.on('requestedSchema', function(data) {
+    if (data && data.schema) {
+      schema.value = data.schema
+    }
+  })
+
+  connection.on('clickedNext', saveActivity)
+  connection.on('clickedDone', saveActivity)
+
+  connection.trigger('ready')
+})
+
+function saveActivity() {
+  const name = activityNameRef.value ? activityNameRef.value.getName() : ''
+  const outArgumentsValues = getOutArgumentsValues()
+  const outArgumentsSchema = getOutArgumentsSchema()
+
+  const payload = {
+    name,
+    metaData: {
+      isConfigured: true
+    },
+    arguments: {
+      execute: {
+        inArguments: [getConfig()],
+        outArguments: outArgumentsValues,
+        url: EXECUTE_URL,
+        verb: 'POST',
+        useJwt: false,
+        timeout: 30000,
+        retryCount: 2,
+        retryDelay: 2000,
+        concurrentRequests: 5
+      }
+    },
+    configurationArguments: {
+      save: {
+        url: `${BASE_URL}/save`,
+        verb: 'POST',
+        useJwt: false
+      },
+      validate: {
+        url: `${BASE_URL}/validate`,
+        verb: 'POST',
+        useJwt: false
+      },
+      publish: {
+        url: `${BASE_URL}/publish`,
+        verb: 'POST',
+        useJwt: false
+      },
+      stop: {
+        url: `${BASE_URL}/stop`,
+        verb: 'POST',
+        useJwt: false
+      }
+    },
+    schema: {
+      arguments: {
+        execute: {
+          outArguments: outArgumentsSchema
+        }
       }
     }
   }
 
-  return outArgs
+  console.log('UPDATE ACTIVITY PAYLOAD', JSON.stringify(payload, null, 2))
+  connection.trigger('updateActivity', payload)
 }
 </script>
 

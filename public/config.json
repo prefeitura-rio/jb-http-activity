@@ -16,64 +16,102 @@
   "arguments": {
     "execute": {
       "inArguments": [
-        { "activityName": "" },
-        { "method": "GET" },
-        { "url": "" },
-        { "headers": "[]" },
-        { "queryParams": "[]" },
-        { "body": "" },
-        { "auth": "{}" },
-        { "responseMapping": "[]" },
-        { "treatErrorsAsOutput": false },
-        { "timeout": 30000 },
-        { "retryCount": 0 },
-        { "retryDelay": 1000 }
+        {
+          "activityName": ""
+        },
+        {
+          "method": "GET"
+        },
+        {
+          "url": ""
+        },
+        {
+          "headers": "[]"
+        },
+        {
+          "queryParams": "[]"
+        },
+        {
+          "body": ""
+        },
+        {
+          "auth": "{}"
+        },
+        {
+          "responseMapping": "[]"
+        },
+        {
+          "treatErrorsAsOutput": false
+        },
+        {
+          "timeout": 30000
+        },
+        {
+          "retryCount": 0
+        },
+        {
+          "retryDelay": 1000
+        }
       ],
-      "outArguments": [],
+      "outArguments": [
+        {
+          "httpStatusCode": 0
+        },
+        {
+          "httpStatusClass": ""
+        },
+        {
+          "httpSuccess": false
+        },
+        {
+          "titulo": ""
+        },
+        {
+          "usuario": 0
+        }
+      ],
       "timeout": 30000,
       "retryCount": 2,
       "retryDelay": 2000,
       "concurrentRequests": 5,
-      "url": "SUBSTITUIR_PELA_URL_NGROK/execute",
+      "url": "https://crewless-unvalued-appear.ngrok-free.dev/execute",
       "verb": "POST",
-      "useJwt": true
+      "useJwt": false
     }
   },
   "configurationArguments": {
-    "applicationExtensionKey": "SUBSTITUIR_PELA_ACTIVITY_KEY_DO_SFMC",
+    "applicationExtensionKey": "6a37e17b-6b11-4340-8489-ca6843e3902a",
     "save": {
-      "url": "SUBSTITUIR_PELA_URL_NGROK/save",
+      "url": "https://crewless-unvalued-appear.ngrok-free.dev/save",
       "verb": "POST",
-      "useJwt": true
+      "useJwt": false
     },
     "validate": {
-      "url": "SUBSTITUIR_PELA_URL_NGROK/validate",
+      "url": "https://crewless-unvalued-appear.ngrok-free.dev/validate",
       "verb": "POST",
-      "useJwt": true
+      "useJwt": false
     },
     "publish": {
-      "url": "SUBSTITUIR_PELA_URL_NGROK/publish",
+      "url": "https://crewless-unvalued-appear.ngrok-free.dev/publish",
       "verb": "POST",
-      "useJwt": true
+      "useJwt": false
     },
     "stop": {
-      "url": "SUBSTITUIR_PELA_URL_NGROK/stop",
+      "url": "https://crewless-unvalued-appear.ngrok-free.dev/stop",
       "verb": "POST",
-      "useJwt": true
+      "useJwt": false
     }
   },
   "userInterfaces": {
     "configurationSupportsReadOnlyMode": true,
+    "configModal": {
+      "height": 600,
+      "width": 800,
+      "fullscreen": false
+    },
     "configInspector": {
       "size": "scm-lg",
       "emptyIframe": false
-    }
-  },
-  "schema": {
-    "arguments": {
-      "execute": {
-        "outArguments": []
-      }
     }
   }
 }

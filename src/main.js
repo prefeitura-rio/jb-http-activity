@@ -1,8 +1,7 @@
+import Postmonger from 'postmonger'
 import { createApp } from 'vue'
 import App from './App.vue'
 
-if (import.meta.env.DEV) {
-  await import('./dev/postmonger-mock.js')
-}
+window.Postmonger = Postmonger
 
 createApp(App).mount('#app')

@@ -15,7 +15,6 @@
       <label>URL</label>
       <div class="url-input-row">
         <input v-model="url" placeholder="https://api.exemplo.com/recurso" />
-        <VariablePicker :schema="schema" @insert="v => url += v" />
       </div>
     </div>
 
@@ -64,7 +63,6 @@
 <script setup>
 import { ref, watch } from 'vue'
 import KeyValueEditor from '../shared/KeyValueEditor.vue'
-import VariablePicker from '../shared/VariablePicker.vue'
 import BodyEditor from '../shared/BodyEditor.vue'
 import { requestConfig } from '../../store.js'
 
@@ -73,16 +71,44 @@ const props = defineProps({
   initialData: { type: Object, default: () => ({}) }
 })
 
-const method = ref(props.initialData.method || 'GET')
-const url = ref(props.initialData.url || '')
-const headers = ref(props.initialData.headers || [])
-const queryParams = ref(props.initialData.queryParams || [])
-const body = ref(props.initialData.body || '')
-const contentType = ref(props.initialData.contentType || 'application/json')
-const timeout = ref(props.initialData.timeout || 30000)
-const retryCount = ref(props.initialData.retryCount || 0)
-const retryDelay = ref(props.initialData.retryDelay || 1000)
-const treatErrorsAsOutput = ref(props.initialData.treatErrorsAsOutput || false)
+function parseArray(value) {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed : []
+    } catch (e) {
+      return []
+    }
+  }
+  return []
+}
+
+const method = ref('GET')
+const url = ref('')
+const headers = ref([])
+const queryParams = ref([])
+const body = ref('')
+const contentType = ref('application/json')
+const timeout = ref(30000)
+const retryCount = ref(0)
+const retryDelay = ref(1000)
+const treatErrorsAsOutput = ref(false)
+
+function loadInitialData(data) {
+  if (!data) return
+
+  method.value = data.method || 'GET'
+  url.value = data.url || ''
+  headers.value = parseArray(data.headers)
+  queryParams.value = parseArray(data.queryParams)
+  body.value = data.body || ''
+  contentType.value = data.contentType || 'application/json'
+  timeout.value = data.timeout || 30000
+  retryCount.value = data.retryCount || 0
+  retryDelay.value = data.retryDelay || 1000
+  treatErrorsAsOutput.value = !!data.treatErrorsAsOutput
+}
 
 function syncStore() {
   requestConfig.method = method.value
@@ -97,7 +123,37 @@ function syncStore() {
   requestConfig.treatErrorsAsOutput = treatErrorsAsOutput.value
 }
 
-watch([method, url, headers, queryParams, body, contentType, timeout, retryCount, retryDelay, treatErrorsAsOutput], syncStore, { deep: true })
+function getData() {
+  return {
+    method: method.value,
+    url: url.value,
+    headers: headers.value,
+    queryParams: queryParams.value,
+    body: body.value,
+    contentType: contentType.value,
+    timeout: timeout.value,
+    retryCount: retryCount.value,
+    retryDelay: retryDelay.value,
+    treatErrorsAsOutput: treatErrorsAsOutput.value
+  }
+}
+
+defineExpose({ getData })
+
+watch(
+  () => props.initialData,
+  (data) => {
+    loadInitialData(data)
+    syncStore()
+  },
+  { deep: true, immediate: true }
+)
+
+watch(
+  [method, url, headers, queryParams, body, contentType, timeout, retryCount, retryDelay, treatErrorsAsOutput],
+  syncStore,
+  { deep: true }
+)
 </script>
 
 <style scoped>
@@ -106,7 +162,6 @@ watch([method, url, headers, queryParams, body, contentType, timeout, retryCount
 .field select, .field input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; box-sizing: border-box; }
 .url-input-row { display: flex; gap: 4px; }
 .url-input-row input { flex: 1; }
-.url-input-row .var-picker select { width: auto; }
 .advanced { border: 1px solid #ddd; border-radius: 4px; padding: 8px; }
 .advanced summary { cursor: pointer; font-size: 12px; font-weight: 600; color: #555; }
 .adv-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }

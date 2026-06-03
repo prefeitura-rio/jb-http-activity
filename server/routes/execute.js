@@ -9,6 +9,7 @@ module.exports = async function executeRoute(req, res) {
 
   try {
     const inArgs = req.body && req.body.inArguments
+
     if (!inArgs || !Array.isArray(inArgs)) {
       return res.status(400).json({ error: 'inArguments ausente ou invalido' })
     }
@@ -21,6 +22,7 @@ module.exports = async function executeRoute(req, res) {
     const responseMapping = safeParse(config.responseMapping, [])
 
     const headersMap = {}
+
     if (Array.isArray(headers)) {
       for (const h of headers) {
         if (h.key) headersMap[h.key] = h.value || ''
@@ -28,6 +30,7 @@ module.exports = async function executeRoute(req, res) {
     }
 
     const paramsMap = {}
+
     if (Array.isArray(queryParams)) {
       for (const p of queryParams) {
         if (p.key) paramsMap[p.key] = p.value || ''
@@ -38,6 +41,7 @@ module.exports = async function executeRoute(req, res) {
     Object.assign(headersMap, authHeaders)
 
     let bodyData = null
+
     if (config.body && ['POST', 'PUT', 'PATCH'].includes(config.method)) {
       try {
         bodyData = JSON.parse(config.body)
@@ -101,17 +105,15 @@ module.exports = async function executeRoute(req, res) {
     if (!treatErrors && !isSuccess) {
       return res.status(500).json({
         error: `HTTP ${statusCode} da API externa`,
-        outArgs
+        httpStatusCode: statusCode,
+        httpStatusClass: statusClass,
+        httpSuccess: false,
+        ...mapped
       })
     }
 
     return res.status(200).json(outArgs)
-
   } catch (err) {
-    const durationMs = 0
-    const statusCode = 0
-    const isSuccess = false
-
     const outArgs = {
       httpStatusCode: 0,
       httpStatusClass: '0xx',
@@ -125,7 +127,7 @@ module.exports = async function executeRoute(req, res) {
       method: 'unknown',
       url: config ? config.url : 'unknown',
       httpStatus: 0,
-      durationMs,
+      durationMs: 0,
       statusClass: '0xx',
       success: false,
       outArguments: outArgs,
@@ -136,13 +138,17 @@ module.exports = async function executeRoute(req, res) {
     logger.error(logEntry)
     logStore.push(logEntry)
 
-    return res.status(500).json({ error: err.message || 'Erro interno do servidor' })
+    return res.status(500).json({
+      error: err.message || 'Erro interno do servidor',
+      ...outArgs
+    })
   }
 }
 
 function safeParse(str, fallback) {
   if (!str) return fallback
   if (typeof str === 'object') return str
+
   try {
     return JSON.parse(str)
   } catch {

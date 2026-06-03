@@ -6,6 +6,7 @@
       <span class="col-type">Tipo</span>
       <span class="col-rm"></span>
     </div>
+
     <div v-for="(row, i) in rows" :key="i" class="rm-row">
       <input v-model="row.expression" placeholder="boleto.codigo" class="col-expr" @input="emitChange" />
       <input v-model="row.outputName" placeholder="codigoBoleto" class="col-name" @input="emitChange" />
@@ -17,7 +18,9 @@
       </select>
       <button class="btn-remove" @click="removeRow(i)">x</button>
     </div>
+
     <button class="btn-add" @click="addRow">+ Adicionar campo</button>
+
     <div class="func-link">
       <a href="#" @click.prevent="$emit('openFunctions')">[ ? Ver funcoes ]</a>
     </div>
@@ -34,10 +37,26 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'openFunctions'])
 
 const rows = ref([])
+let internalUpdate = false
 
-watch(() => props.modelValue, (val) => {
-  rows.value = val && val.length ? val.map(r => ({ ...r })) : []
-}, { immediate: true })
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (internalUpdate) {
+      internalUpdate = false
+      return
+    }
+
+    rows.value = Array.isArray(val)
+      ? val.map(r => ({
+          expression: r.expression || '',
+          outputName: r.outputName || '',
+          type: r.type || 'text'
+        }))
+      : []
+  },
+  { immediate: true, deep: true }
+)
 
 function addRow() {
   rows.value.push({ expression: '', outputName: '', type: 'text' })
@@ -50,7 +69,16 @@ function removeRow(i) {
 }
 
 function emitChange() {
-  emit('update:modelValue', rows.value.map(r => ({ expression: r.expression, outputName: r.outputName, type: r.type })))
+  internalUpdate = true
+
+  emit(
+    'update:modelValue',
+    rows.value.map(r => ({
+      expression: r.expression || '',
+      outputName: r.outputName || '',
+      type: r.type || 'text'
+    }))
+  )
 }
 </script>
 
