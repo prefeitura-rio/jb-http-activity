@@ -80,11 +80,15 @@ jb-http-activity/
 ├── test/
 │   └── execute.test.js
 ├── k8s/
-│   ├── kustomization.yaml     # Kustomize overlay
-│   ├── resources.yaml         # Deployment + Service + PDB + KEDA
-│   └── infisical-secret.yaml  # InfisicalSecret CRD
+│   ├── staging/
+│   │   └── resources.yaml     # Deployment + Service + PDB (1 réplica)
+│   └── prod/
+│       ├── resources.yaml     # Deployment + Service + PDB + KEDA (2 réplicas)
+│       ├── infisical-secret.yaml  # InfisicalSecret CRD
+│       └── kustomization.yaml
 ├── .github/workflows/
-│   └── deploy.yaml            # GitHub Actions CI/CD
+│   ├── deploy-staging.yaml    # staging branch → k8s/staging/
+│   └── deploy-production.yaml # main branch → k8s/prod/
 ├── Dockerfile
 ├── package.json
 └── vite.config.js
@@ -284,10 +288,17 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 ## Deploy
 
 ```bash
-# GitHub Actions faz tudo automaticamente no push para main
-# 1. Build + push imagem para ghcr.io/prefeitura-rio/jb-http-activity
-# 2. Atualiza ArgoCD Application via kubectl patch
-# 3. ArgoCD sincroniza o Deployment no GKE
+# GitHub Actions faz tudo automaticamente
+# staging branch → k8s/staging/ → 1 réplica
+#   git push origin staging
+# main branch    → k8s/prod/    → 2 réplicas
+#   git push origin main
+
+# Fluxo recomendado:
+# 1. Desenvolve em branch feature
+# 2. Merge → staging → deploy automático no GKE staging
+# 3. Testa via curl/Postman na URL de staging
+# 4. Merge staging → main → deploy automático no GKE produção
 
 # Manual (emergência):
 gcloud container clusters get-credentials application --zone=us-central1 --project=rj-crm-registry
@@ -304,6 +315,8 @@ kubectl set image deployment/jb-http-activity app=ghcr.io/prefeitura-rio/jb-http
    - Category: Custom
 3. Copiar **Unique Key** → `public/config.json > configurationArguments.applicationExtensionKey`
 4. Copiar **App Signing Secret** → Infisical (SuperApp) como `JWT_SECRET`
+
+**Staging:** Para testar alterações antes de subir pra produção, crie um segundo Installed Package apontando pra URL de staging (ex: `jb-http-activity-staging.pref.rio`) com seu próprio App Signing Secret no `envSlug: staging` do Infisical.
 
 ---
 

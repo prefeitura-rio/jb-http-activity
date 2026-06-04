@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Deploy to Production
 
 on:
   push:
@@ -39,14 +39,14 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64 \
-            --tag $IMAGE_NAME:latest \
+            --tag $IMAGE_NAME:stable \
             --tag $IMAGE_NAME:$COMMIT_HASH \
             --push .
 
       - name: Get image digest
         id: digest
         run: |
-          DIGEST=$(docker buildx imagetools inspect $IMAGE_NAME:latest --format '{{.Manifest.Digest}}' | grep -oE 'sha256:[a-f0-9]+' | head -n1)
+          DIGEST=$(docker buildx imagetools inspect $IMAGE_NAME:stable --format '{{.Manifest.Digest}}' | grep -oE 'sha256:[a-f0-9]+' | head -n1)
           echo "DIGEST=$DIGEST" >> $GITHUB_ENV
           echo "Image digest: $DIGEST"
 
@@ -101,12 +101,13 @@ jobs:
       - name: Create deployment summary
         if: always()
         run: |
-          echo "## jb-http-activity Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "## jb-http-activity (prod) Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Commit**: $SHORT_HASH" >> $GITHUB_STEP_SUMMARY
           echo "**Image**: \`$IMAGE_NAME:$COMMIT_HASH@${DIGEST:0:12}...\`" >> $GITHUB_STEP_SUMMARY
+          echo "**K8s**: k8s/prod/" >> $GITHUB_STEP_SUMMARY
           if [ "${{ job.status }}" = "success" ]; then
-            echo "### Deployment Successful" >> $GITHUB_STEP_SUMMARY
+            echo "### Deploy to Production Successful" >> $GITHUB_STEP_SUMMARY
           else
-            echo "### Deployment Failed" >> $GITHUB_STEP_SUMMARY
+            echo "### Deploy to Production Failed" >> $GITHUB_STEP_SUMMARY
           fi
