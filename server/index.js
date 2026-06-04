@@ -12,6 +12,7 @@ const logsRoute = require('./routes/logs')
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason)
+  process.exitCode = 1
 })
 
 process.on('uncaughtException', (err) => {

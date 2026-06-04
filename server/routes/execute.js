@@ -147,7 +147,7 @@ module.exports = async function executeRoute(req, res) {
     bigQueryLogger.log(logEntry)
 
     return res.status(500).json({
-      error: err.message || 'Erro interno do servidor',
+      error: 'Erro interno ao executar requisicao',
       ...outArgs
     })
   }
