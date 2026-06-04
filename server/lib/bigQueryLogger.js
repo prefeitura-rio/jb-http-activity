@@ -72,10 +72,10 @@ function log(entry) {
   pending.push(row)
 
   if (!flushTimer) {
-    flushTimer = setTimeout(flush, 2000)
+    flushTimer = setTimeout(flush, 10000)
   }
 
-  if (pending.length >= 5) {
+  if (pending.length >= 100) {
     if (flushTimer) {
       clearTimeout(flushTimer)
       flushTimer = null
