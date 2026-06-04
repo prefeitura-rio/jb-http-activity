@@ -1,5 +1,11 @@
 const axios = require('axios')
 
+function shouldRetry(attempt, retryCount, response) {
+  if (attempt >= retryCount) return false
+  if (!response) return true
+  return response.status >= 500
+}
+
 async function request(config) {
   const { method, url, headers, queryParams, body, timeout } = config
   const retryCount = config.retryCount || 0
@@ -21,13 +27,13 @@ async function request(config) {
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       const response = await axios(reqConfig)
-      if (attempt < retryCount && response.status >= 500) {
+      if (shouldRetry(attempt, retryCount, response)) {
         await sleep(retryDelay)
         continue
       }
       return { status: response.status, data: response.data }
     } catch (err) {
-      if (attempt < retryCount) {
+      if (shouldRetry(attempt, retryCount, null)) {
         await sleep(retryDelay)
         continue
       }
@@ -40,4 +46,4 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-module.exports = { request }
+module.exports = { request, shouldRetry, sleep }
