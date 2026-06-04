@@ -29,6 +29,9 @@ spec:
           envFrom:
             - secretRef:
                 name: jb-http-secrets
+          env:
+            - name: NODE_ENV
+              value: production
           ports:
             - containerPort: 8080
           livenessProbe:
