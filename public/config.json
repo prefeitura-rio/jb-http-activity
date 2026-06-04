@@ -80,7 +80,7 @@
     }
   },
   "configurationArguments": {
-    "applicationExtensionKey": "6a37e17b-6b11-4340-8489-ca6843e3902a",
+    "applicationExtensionKey": "SUBSTITUIR_PELA_ACTIVITY_KEY",
     "save": {
       "url": "MUDAR_PELO_DOMINIO/save",
     "validate": {

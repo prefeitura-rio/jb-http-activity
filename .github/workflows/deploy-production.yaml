@@ -39,6 +39,7 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64 \
+            --build-arg SFMC_ACTIVITY_KEY=${{ secrets.SFMC_ACTIVITY_KEY_PRODUCTION }} \
             --tag $IMAGE_NAME:stable \
             --tag $IMAGE_NAME:$COMMIT_HASH \
             --push .
