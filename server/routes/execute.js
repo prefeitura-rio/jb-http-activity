@@ -149,10 +149,16 @@ module.exports = async function executeRoute(req, res) {
     logStore.push(logEntry)
     bigQueryLogger.log(logEntry)
 
-    return res.status(500).json({
+    const errorResponse = {
       error: err.message || 'Erro interno do servidor',
       ...outArgs
-    })
+    }
+
+    if (config._preview && err._attempts) {
+      errorResponse._attempts = err._attempts
+    }
+
+    return res.status(500).json(errorResponse)
   }
 }
 

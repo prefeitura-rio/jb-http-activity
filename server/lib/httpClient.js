@@ -45,7 +45,10 @@ async function request(config) {
     }
   }
 
-  if (lastError) throw lastError
+  if (lastError) {
+    lastError._attempts = retryCount + 1
+    throw lastError
+  }
   return { status: lastResponse.status, data: lastResponse.data, attempts: retryCount + 1 }
 }
 
