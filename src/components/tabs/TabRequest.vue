@@ -34,7 +34,7 @@
     </div>
 
     <details class="advanced">
-      <summary>Opcoes avancadas</summary>
+      <summary>Opções avançadas</summary>
       <div class="adv-grid">
         <div class="adv-field">
           <label>Timeout (ms)</label>
@@ -52,9 +52,9 @@
       <div class="adv-toggle">
         <label class="toggle-label">
           <input type="checkbox" v-model="treatErrorsAsOutput" />
-          <span>Tratar erros HTTP como saida</span>
+          <span>Tratar erros HTTP como saída</span>
         </label>
-        <p class="toggle-hint">Quando ativo, respostas 4xx e 5xx nao interrompem o fluxo. Use o Decision Split nativo com httpStatusCode para rotear.</p>
+        <p class="toggle-hint">Quando ativo, respostas 4xx e 5xx não interrompem o fluxo. Use o Decision Split nativo com httpStatusCode para rotear.</p>
       </div>
     </details>
   </div>

@@ -1,8 +1,8 @@
 <template>
   <div v-if="visible" class="modal-overlay" @click.self="$emit('close')">
     <div class="modal">
-      <h3>Funcoes de Transformacao</h3>
-      <p class="hint">Digite expressoes na coluna "Expressao" para transformar valores do response.</p>
+      <h3>Funções de Transformação</h3>
+      <p class="hint">Digite expressões na coluna "Expressão" para transformar valores da resposta.</p>
       <div class="func-group">
         <h4>Texto</h4>
         <div v-for="f in textFuncs" :key="f.name" class="func-row">
@@ -11,21 +11,21 @@
         </div>
       </div>
       <div class="func-group">
-        <h4>Numero</h4>
+        <h4>Número</h4>
         <div v-for="f in numFuncs" :key="f.name" class="func-row">
           <code>{{ f.syntax }}</code>
           <span>{{ f.desc }}</span>
         </div>
       </div>
       <div class="func-group">
-        <h4>Logica</h4>
+        <h4>Lógica</h4>
         <div v-for="f in logicFuncs" :key="f.name" class="func-row">
           <code>{{ f.syntax }}</code>
           <span>{{ f.desc }}</span>
         </div>
       </div>
       <div class="func-group">
-        <h4>Formatacao</h4>
+        <h4>Formatação</h4>
         <div v-for="f in formatFuncs" :key="f.name" class="func-row">
           <code>{{ f.syntax }}</code>
           <span>{{ f.desc }}</span>
@@ -43,21 +43,21 @@ defineEmits(['close'])
 const textFuncs = [
   { syntax: 'UPPER(v)', desc: 'caixa alta' },
   { syntax: 'LOWER(v)', desc: 'caixa baixa' },
-  { syntax: 'PROPER(v)', desc: 'primeira maiuscula' },
-  { syntax: 'TRIM(v)', desc: 'sem espacos extras' },
+  { syntax: 'PROPER(v)', desc: 'primeira maiúscula' },
+  { syntax: 'TRIM(v)', desc: 'sem espaços extras' },
   { syntax: 'LEN(v)', desc: 'tamanho da string' },
   { syntax: 'SUBSTR(v, i, n)', desc: 'substring' },
   { syntax: 'CONCAT(a, b, ...)', desc: 'concatenar' }
 ]
 const numFuncs = [
-  { syntax: 'ROUND(v, n)', desc: 'arredondar casas' },
+  { syntax: 'ROUND(v, n)', desc: 'arredondar casas decimais' },
   { syntax: 'ABS(v)', desc: 'valor absoluto' },
-  { syntax: 'NUMBER(v)', desc: 'converter para numero' }
+  { syntax: 'NUMBER(v)', desc: 'converter para número' }
 ]
 const logicFuncs = [
-  { syntax: 'IF(cond, t, f)', desc: 'se/senao' },
-  { syntax: 'DEFAULT(v, fb)', desc: 'valor padrao se nulo' },
-  { syntax: 'COALESCE(v1, v2, ...)', desc: 'primeiro nao nulo' }
+  { syntax: 'IF(cond, t, f)', desc: 'se/senão' },
+  { syntax: 'DEFAULT(v, fb)', desc: 'valor padrão se nulo' },
+  { syntax: 'COALESCE(v1, v2, ...)', desc: 'primeiro não nulo' }
 ]
 const formatFuncs = [
   { syntax: 'FORMAT(v, fmt)', desc: 'formatar string' },

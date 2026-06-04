@@ -1,8 +1,8 @@
 <template>
   <div class="tab-response">
     <div class="builtin-section">
-      <h4>Variaveis built-in (sempre disponiveis)</h4>
-      <p class="hint">Geradas automaticamente, sem configuracao</p>
+      <h4>Variáveis built-in (sempre disponíveis)</h4>
+      <p class="hint">Geradas automaticamente, sem configuração</p>
       <div class="builtin-list">
         <code>httpStatusCode  (number) ex: 200</code>
         <code>httpStatusClass (text)   ex: "2xx"</code>
@@ -16,12 +16,12 @@
     </div>
 
     <div class="mapping-section">
-      <h4>Mapeamento de campos do response</h4>
+      <h4>Mapeamento de campos da resposta</h4>
       <ResponseMapping v-model="responseMapping" @openFunctions="showFunctions = true" />
     </div>
 
     <div v-if="allVariables.length" class="all-vars-section">
-      <h4>Todas as variaveis geradas</h4>
+      <h4>Todas as variáveis geradas</h4>
       <p class="hint">Use nas atividades seguintes:</p>
       <div class="vars-list">
         <code v-for="v in allVariables" :key="v" v-text="v"></code>
@@ -30,7 +30,7 @@
     </div>
 
     <div class="test-section">
-      <h4>Testar request</h4>
+      <h4>Testar requisição</h4>
       <button class="btn-exec" @click="executeTest" :disabled="testing">
         {{ testing ? 'Executando...' : 'Executar com dados de teste' }}
       </button>

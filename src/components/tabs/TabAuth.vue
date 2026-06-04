@@ -1,7 +1,7 @@
 <template>
   <div class="tab-auth">
     <div class="field">
-      <label>Tipo de Autenticacao</label>
+      <label>Tipo de Autenticação</label>
       <select v-model="authType">
         <option value="none">None</option>
         <option value="bearer">Bearer Token</option>
@@ -37,7 +37,7 @@
         <label>Scope (opcional)</label>
         <input v-model="scope" placeholder="divida:read boleto:write" />
       </div>
-      <button class="btn-test" @click="testConnection">Testar conexao</button>
+      <button class="btn-test" @click="testConnection">Testar conexão</button>
       <div v-if="testResult" class="test-result" :class="{ success: testOk, fail: !testOk }">
         {{ testResult }}
       </div>
