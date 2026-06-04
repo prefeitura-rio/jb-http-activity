@@ -59,7 +59,9 @@ module.exports = async function executeRoute(req, res) {
       headers: headersMap,
       queryParams: paramsMap,
       body: bodyData,
-      timeout: config.timeout || 30000
+      timeout: config.timeout || 30000,
+      retryCount: config.retryCount || 0,
+      retryDelay: config.retryDelay || 1000
     })
 
     const durationMs = Date.now() - startTime
