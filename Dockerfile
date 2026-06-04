@@ -16,4 +16,5 @@ COPY server/ ./server/
 COPY public/ ./public/
 EXPOSE 8080
 ENV PORT=8080
+USER node
 CMD ["node", "server/index.js"]

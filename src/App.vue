@@ -22,6 +22,7 @@ import ActivityName from './components/ActivityName.vue'
 import TabRequest from './components/tabs/TabRequest.vue'
 import TabAuth from './components/tabs/TabAuth.vue'
 import TabResponse from './components/tabs/TabResponse.vue'
+import { requestConfig } from './store.js'
 
 const activeTab = ref('request')
 const tabs = [
@@ -46,21 +47,7 @@ function getConfig() {
   const name = activityNameRef.value ? activityNameRef.value.getName() : ''
 
   const request = requestRef.value?.getData ? requestRef.value.getData() : {}
-  const auth = authRef.value || {}
   const response = responseRef.value?.getData ? responseRef.value.getData() : {}
-
-  const authConfig = { type: 'none' }
-
-  if (auth.authType === 'bearer') {
-    authConfig.type = 'bearer'
-    authConfig.token = auth.bearerToken || ''
-  } else if (auth.authType === 'oauth2_client_credentials') {
-    authConfig.type = 'oauth2_client_credentials'
-    authConfig.tokenUrl = auth.tokenUrl || ''
-    authConfig.clientId = auth.clientId || ''
-    authConfig.clientSecret = auth.clientSecret || ''
-    authConfig.scope = auth.scope || ''
-  }
 
   return {
     activityName: name,
@@ -70,7 +57,7 @@ function getConfig() {
     queryParams: JSON.stringify(request.queryParams || []),
     body: request.body || '',
     contentType: request.contentType || 'application/json',
-    auth: JSON.stringify(authConfig),
+    auth: JSON.stringify(requestConfig.auth || { type: 'none' }),
     responseMapping: JSON.stringify(response.responseMapping || []),
     treatErrorsAsOutput: !!request.treatErrorsAsOutput,
     timeout: request.timeout || 30000,
