@@ -31,7 +31,7 @@ async function request(config) {
         await sleep(retryDelay)
         continue
       }
-      return { status: response.status, data: response.data }
+      return { status: response.status, data: response.data, attempts: attempt + 1 }
     } catch (err) {
       if (shouldRetry(attempt, retryCount, null)) {
         await sleep(retryDelay)

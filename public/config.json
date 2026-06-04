@@ -74,7 +74,7 @@
       "retryCount": 2,
       "retryDelay": 2000,
       "concurrentRequests": 5,
-      "url": "MUDAR_PELO_DOMINIO/execute",
+      "url": "http://localhost:3000/execute",
       "verb": "POST",
       "useJwt": false
     }
@@ -82,13 +82,13 @@
   "configurationArguments": {
     "applicationExtensionKey": "SUBSTITUIR_PELA_ACTIVITY_KEY",
     "save": {
-      "url": "MUDAR_PELO_DOMINIO/save",
+      "url": "http://localhost:3000/save",
     "validate": {
-      "url": "MUDAR_PELO_DOMINIO/validate",
+      "url": "http://localhost:3000/validate",
     "publish": {
-      "url": "MUDAR_PELO_DOMINIO/publish",
+      "url": "http://localhost:3000/publish",
     "stop": {
-      "url": "MUDAR_PELO_DOMINIO/stop",
+      "url": "http://localhost:3000/stop",
       "verb": "POST",
       "useJwt": false
     }

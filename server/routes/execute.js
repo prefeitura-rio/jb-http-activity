@@ -85,6 +85,7 @@ module.exports = async function executeRoute(req, res) {
       outArgs._url = config.url
       outArgs._method = config.method
       outArgs._statusClass = statusClass
+      outArgs._attempts = httpResponse.attempts || 1
     }
 
     const logEntry = {

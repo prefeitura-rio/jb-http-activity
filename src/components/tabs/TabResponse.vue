@@ -44,6 +44,7 @@
         <div class="response-meta">
           <span class="meta-url">{{ testResponse.url }}</span>
           <span class="meta-duration">{{ testResponse.duration }}ms</span>
+          <span class="meta-attempts" v-if="testResponse.attempts > 1">{{ testResponse.attempts }} tentativas</span>
           <span class="meta-timestamp">{{ testResponse.timestamp }}</span>
         </div>
         <div v-if="testResponse.body" class="response-body">
@@ -59,8 +60,11 @@
         </div>
         <div class="error-detail">
           <div class="error-url">{{ testError.url }}</div>
-          <div v-if="testError.duration" class="error-duration">{{ testError.duration }}ms</div>
-          <div class="error-timestamp">{{ testError.timestamp }}</div>
+          <div class="error-meta-row">
+            <span v-if="testError.duration" class="error-duration">{{ testError.duration }}ms</span>
+            <span v-if="testError.attempts > 1" class="error-attempts">{{ testError.attempts }} tentativas</span>
+            <span class="error-timestamp">{{ testError.timestamp }}</span>
+          </div>
           <div class="error-message-text">{{ testError.message }}</div>
         </div>
       </div>
@@ -178,6 +182,7 @@ async function executeTest() {
       url: truncateUrl(res.data._url || requestConfig.url),
       duration: res.data._duration || 0,
       timestamp: formatTimestamp(res.data._timestamp),
+      attempts: res.data._attempts || 1,
       body: res.data._rawBody ? (typeof res.data._rawBody === 'string' ? res.data._rawBody : JSON.stringify(res.data._rawBody, null, 2)) : '',
       mapped: { ...mapped, httpStatusCode: res.data.httpStatusCode, httpSuccess: res.data.httpSuccess }
     }
@@ -188,6 +193,7 @@ async function executeTest() {
       statusText: errorData?.httpStatusClass || 'Falha',
       url: truncateUrl(requestConfig.url),
       duration: errorData?._duration || 0,
+      attempts: errorData?._attempts || 1,
       timestamp: formatTimestamp(errorData?._timestamp),
       message: err.response?.data?.error || err.message || 'Erro de conexao'
     }
@@ -236,7 +242,9 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .error-detail { font-size: 12px; color: #555; }
 .error-url { font-family: monospace; font-size: 11px; color: #856404; word-break: break-all; margin-bottom: 2px; }
 .error-duration { font-size: 11px; color: #888; }
-.error-timestamp { font-size: 11px; color: #888; margin-bottom: 4px; }
+.error-attempts { font-size: 10px; color: #856404; background: #fff3cd; padding: 0 4px; border-radius: 2px; }
+.error-meta-row { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.error-timestamp { font-size: 11px; color: #888; }
 .error-message-text { color: #721c24; font-weight: 600; margin-top: 4px; }
 .response-error-header { margin-bottom: 4px; }
 .response-ok-header { margin-bottom: 4px; }
@@ -245,6 +253,7 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .response-meta { display: flex; gap: 8px; font-size: 11px; color: #888; margin-bottom: 6px; flex-wrap: wrap; }
 .meta-url { font-family: monospace; color: #555; word-break: break-all; }
 .meta-duration { color: #666; white-space: nowrap; }
+.meta-attempts { color: #856404; background: #fff3cd; padding: 0 4px; border-radius: 2px; font-size: 10px; white-space: nowrap; }
 .meta-timestamp { color: #888; white-space: nowrap; }
 .response-body pre { font-size: 11px; font-family: monospace; background: #fff; border: 1px solid #eee; border-radius: 3px; padding: 6px; overflow-x: auto; margin: 4px 0; }
 .response-mappings { margin-top: 4px; }
