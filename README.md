@@ -57,9 +57,13 @@ jb-http-activity/
 ├── server/          # Express backend (JWT, execute, lifecycle, expressionParser, bigQueryLogger)
 ├── src/             # Vue.js 3 frontend (tabs: Request, Auth, Response)
 ├── public/          # config.json, postmonger.js, icons
-├── k8s/             # Kubernetes manifests (Deployment, Service, PDB, KEDA, InfisicalSecret)
+├── k8s/
+│   ├── staging/      # Kubernetes manifests - staging (1 replica)
+│   └── prod/         # Kubernetes manifests - production (2 replicas, KEDA, InfisicalSecret)
 ├── test/            # Mocha tests
-├── .github/         # GitHub Actions workflows
+├── .github/workflows/
+│   ├── deploy-staging.yaml     # staging branch → GKE staging
+│   └── deploy-production.yaml  # main branch → GKE production
 ├── Dockerfile
 └── package.json
 ```
@@ -85,11 +89,22 @@ chore: tooling, dependencies, infra
 
 Each phase of development should be committed independently for safety. Never commit secrets or API keys.
 
-## Documentation
+## Environments
 
-Full technical specification: `jb-http-activity.md`
-Analysis report: `sfmc-postman-analysis-report.md`
-Mockups: `.opencode/docs/discovery/images/`
+| Ambiente | Branch | GKE | SFMC | Uso |
+|---|---|---|---|---|
+| Staging | `staging` | 1 replica | (opcional) Package separado | Testes com contatos internos |
+| Production | `main` | 2 replicas + KEDA | Package oficial | Jornadas reais |
+
+## Deploy
+
+```bash
+# Staging
+git push origin staging     # → GitHub Actions → GKE staging
+
+# Production
+git push origin main        # → GitHub Actions → GKE production
+```
 
 ---
 
