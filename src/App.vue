@@ -39,9 +39,8 @@ const authRef = ref(null)
 const responseRef = ref(null)
 
 let connection = null
-
-const BASE_URL = 'https://crewless-unvalued-appear.ngrok-free.dev'
-const EXECUTE_URL = `${BASE_URL}/execute`
+let baseUrl = 'http://localhost:3000'
+let executeUrl = 'http://localhost:3000/execute'
 
 function getConfig() {
   const name = activityNameRef.value ? activityNameRef.value.getName() : ''
@@ -119,7 +118,18 @@ function getDefaultValue(type) {
   return ''
 }
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const resp = await fetch('/config.json')
+    const appConfig = await resp.json()
+    const url = appConfig.arguments?.execute?.url
+    if (url) {
+      const idx = url.lastIndexOf('/')
+      baseUrl = idx > 0 ? url.substring(0, idx) : url
+      executeUrl = url
+    }
+  } catch {}
+
   connection = new window.Postmonger.Session()
 
   connection.on('initActivity', function(data) {
@@ -166,7 +176,7 @@ function saveActivity() {
       execute: {
         inArguments: [getConfig()],
         outArguments: outArgumentsValues,
-        url: EXECUTE_URL,
+        url: executeUrl,
         verb: 'POST',
         useJwt: false,
         timeout: 30000,
@@ -177,22 +187,22 @@ function saveActivity() {
     },
     configurationArguments: {
       save: {
-        url: `${BASE_URL}/save`,
+        url: `${baseUrl}/save`,
         verb: 'POST',
         useJwt: false
       },
       validate: {
-        url: `${BASE_URL}/validate`,
+        url: `${baseUrl}/validate`,
         verb: 'POST',
         useJwt: false
       },
       publish: {
-        url: `${BASE_URL}/publish`,
+        url: `${baseUrl}/publish`,
         verb: 'POST',
         useJwt: false
       },
       stop: {
-        url: `${BASE_URL}/stop`,
+        url: `${baseUrl}/stop`,
         verb: 'POST',
         useJwt: false
       }

@@ -74,7 +74,7 @@
       "retryCount": 2,
       "retryDelay": 2000,
       "concurrentRequests": 5,
-      "url": "https://crewless-unvalued-appear.ngrok-free.dev/execute",
+      "url": "MUDAR_PELO_DOMINIO/execute",
       "verb": "POST",
       "useJwt": false
     }
@@ -82,22 +82,13 @@
   "configurationArguments": {
     "applicationExtensionKey": "6a37e17b-6b11-4340-8489-ca6843e3902a",
     "save": {
-      "url": "https://crewless-unvalued-appear.ngrok-free.dev/save",
-      "verb": "POST",
-      "useJwt": false
-    },
+      "url": "MUDAR_PELO_DOMINIO/save",
     "validate": {
-      "url": "https://crewless-unvalued-appear.ngrok-free.dev/validate",
-      "verb": "POST",
-      "useJwt": false
-    },
+      "url": "MUDAR_PELO_DOMINIO/validate",
     "publish": {
-      "url": "https://crewless-unvalued-appear.ngrok-free.dev/publish",
-      "verb": "POST",
-      "useJwt": false
-    },
+      "url": "MUDAR_PELO_DOMINIO/publish",
     "stop": {
-      "url": "https://crewless-unvalued-appear.ngrok-free.dev/stop",
+      "url": "MUDAR_PELO_DOMINIO/stop",
       "verb": "POST",
       "useJwt": false
     }
