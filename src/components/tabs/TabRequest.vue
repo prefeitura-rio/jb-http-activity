@@ -41,7 +41,7 @@
           <input v-model.number="timeout" type="number" min="1000" max="100000" />
         </div>
         <div class="adv-field">
-          <label>Tentativas</label>
+          <label>Retentativas</label>
           <input v-model.number="retryCount" type="number" min="0" max="10" />
         </div>
         <div class="adv-field">
