@@ -81,10 +81,12 @@ jb-http-activity/
 │   └── execute.test.js
 ├── k8s/
 │   ├── staging/
-│   │   └── resources.yaml     # Deployment + Service + PDB (1 réplica)
+│   │   ├── resources.yaml         # Deployment + Service + PDB (1 réplica)
+│   │   ├── infisical-secret.yaml   # envSlug: staging
+│   │   └── kustomization.yaml
 │   └── prod/
-│       ├── resources.yaml     # Deployment + Service + PDB + KEDA (2 réplicas)
-│       ├── infisical-secret.yaml  # InfisicalSecret CRD
+│       ├── resources.yaml         # Deployment + Service + PDB + KEDA (2 réplicas)
+│       ├── infisical-secret.yaml   # envSlug: prod
 │       └── kustomization.yaml
 ├── .github/workflows/
 │   ├── deploy-staging.yaml    # staging branch → k8s/staging/
@@ -280,8 +282,9 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 
 1. **Backend offline** — `npm test` + curl localhost:3000
 2. **Frontend offline** — `npm run dev:client` + Postmonger mock
-3. **ngrok** — expor local para SFMC Sandbox
-4. **E2E** — jornada real no SFMC Sandbox
+3. **ngrok** — expor local para SFMC Sandbox (dev local)
+4. **E2E staging** — jornada no SFMC via package de staging com contatos internos
+5. **E2E produção** — jornada real no SFMC
 
 ---
 
@@ -297,7 +300,7 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 # Fluxo recomendado:
 # 1. Desenvolve em branch feature
 # 2. Merge → staging → deploy automático no GKE staging
-# 3. Testa via curl/Postman na URL de staging
+# 3. Testa via SFMC sandbox com Installed Package de staging e contatos internos
 # 4. Merge staging → main → deploy automático no GKE produção
 
 # Manual (emergência):
@@ -323,6 +326,6 @@ kubectl set image deployment/jb-http-activity app=ghcr.io/prefeitura-rio/jb-http
 ## Convenções
 
 - Commits: `feat:` / `fix:` / `refactor:` (sem prefixo de task)
-- Branch: `main` para produção, `dev` para desenvolvimento
+- Branch: `main` para produção, `staging` para testes
 - Código: sem comentários desnecessários, variáveis em camelCase, português para textos de UI
 - Versionamento semântico seguindo o release do SFMC
