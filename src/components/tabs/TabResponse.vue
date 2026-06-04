@@ -35,11 +35,12 @@
         {{ testing ? 'Executando...' : 'Executar com dados de teste' }}
       </button>
       <div v-if="testResponse" class="test-response">
-        <div v-if="testResponse.isError" class="response-error-header">
-          <span class="error-badge">{{ testResponse.statusCode }} {{ testResponse.statusText }}</span>
-        </div>
-        <div v-else class="response-ok-header">
-          <span class="ok-badge">{{ testResponse.statusCode }} OK</span>
+        <div class="response-status-row">
+          <span>API: </span>
+          <span v-if="testResponse.isError" class="error-badge">{{ testResponse.statusCode }} {{ testResponse.statusText }}</span>
+          <span v-else class="ok-badge">{{ testResponse.statusCode }} OK</span>
+          <span class="backend-label">  Backend: </span>
+          <span :class="testResponse.backendStatus < 300 ? 'ok-badge-small' : 'error-badge-small'">{{ testResponse.backendStatus }}</span>
         </div>
         <div class="response-meta">
           <span class="meta-url">{{ testResponse.url }}</span>
@@ -57,6 +58,8 @@
       <div v-if="testError" class="test-error">
         <div class="error-header-bar">
           <span class="error-badge-large">{{ testError.statusCode || '—' }} {{ testError.statusText || 'Erro' }}</span>
+          <span class="backend-label" v-if="testError.backendStatus">  Backend: </span>
+          <span class="error-badge-small" v-if="testError.backendStatus">{{ testError.backendStatus }}</span>
         </div>
         <div class="error-detail">
           <div class="error-url">{{ testError.url }}</div>
@@ -165,7 +168,7 @@ async function executeTest() {
         { body: requestConfig.body },
         { auth: requestConfig.auth },
         { responseMapping: responseMapping.value },
-        { treatErrorsAsOutput: true, timeout: requestConfig.timeout, retryCount: requestConfig.retryCount, retryDelay: requestConfig.retryDelay, _preview: true }
+        { treatErrorsAsOutput: requestConfig.treatErrorsAsOutput, timeout: requestConfig.timeout, retryCount: requestConfig.retryCount, retryDelay: requestConfig.retryDelay, _preview: true }
       ]
     })
 
@@ -177,6 +180,7 @@ async function executeTest() {
 
     testResponse.value = {
       isError,
+      backendStatus: res.status,
       statusCode: res.data.httpStatusCode,
       statusText: isError ? (res.data.httpStatusClass || 'Error') : 'OK',
       url: truncateUrl(res.data._url || requestConfig.url),
@@ -189,6 +193,7 @@ async function executeTest() {
   } catch (err) {
     const errorData = err.response?.data
     testError.value = {
+      backendStatus: err.response?.status,
       statusCode: errorData?.httpStatusCode || err.response?.status || '—',
       statusText: errorData?.httpStatusClass || 'Falha',
       url: truncateUrl(requestConfig.url),
@@ -250,6 +255,10 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .response-ok-header { margin-bottom: 4px; }
 .error-badge { display: inline-block; background: #dc3545; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
 .ok-badge { display: inline-block; background: #28a745; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+.ok-badge-small { display: inline-block; background: #28a745; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+.error-badge-small { display: inline-block; background: #dc3545; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+.backend-label { font-size: 11px; color: #888; }
+.response-status-row { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; flex-wrap: wrap; }
 .response-meta { display: flex; gap: 8px; font-size: 11px; color: #888; margin-bottom: 6px; flex-wrap: wrap; }
 .meta-url { font-family: monospace; color: #555; word-break: break-all; }
 .meta-duration { color: #666; white-space: nowrap; }
