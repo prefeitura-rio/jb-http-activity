@@ -212,6 +212,13 @@ function evaluateExpression(expression, responseData) {
 
   const args = argsRaw.map(arg => {
     const argTrimmed = arg.trim()
+    const compMatch = argTrimmed.match(/^(.*?)\s*(==|!=)\s*(.*)$/)
+    if (compMatch && fnName === 'if') {
+      const left = resolveValue(compMatch[1].trim(), responseData)
+      const right = resolveValue(compMatch[3].trim(), responseData)
+      if (compMatch[2] === '==') return left == right
+      return left != right
+    }
     if (argTrimmed.includes('(')) return evaluateExpression(argTrimmed, responseData)
     if (argTrimmed.startsWith("'") && argTrimmed.endsWith("'")) return argTrimmed.slice(1, -1)
     if (argTrimmed.startsWith('"') && argTrimmed.endsWith('"')) return argTrimmed.slice(1, -1)
@@ -230,6 +237,22 @@ function evaluateExpression(expression, responseData) {
   } catch {
     return null
   }
+}
+
+function resolveValue(raw, responseData) {
+  const trimmed = raw.trim()
+
+  if (trimmed.startsWith("'") && trimmed.endsWith("'")) return trimmed.slice(1, -1)
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) return trimmed.slice(1, -1)
+  if (trimmed === 'true') return true
+  if (trimmed === 'false') return false
+  if (trimmed === 'null') return null
+  if (/^-?\d+\.?\d*$/.test(trimmed)) return Number(trimmed)
+  if (isDotNotation(trimmed) || isSimplePath(trimmed)) {
+    const val = getByDotNotation(trimmed, responseData)
+    return val !== undefined ? val : trimmed
+  }
+  return trimmed
 }
 
 module.exports = { evaluateExpression, getByDotNotation }
