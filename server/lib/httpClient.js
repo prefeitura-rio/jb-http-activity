@@ -24,15 +24,19 @@ async function request(config) {
     reqConfig.data = body
   }
 
+  let lastResponse = null
+  let lastError = null
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
-      const response = await axios(reqConfig)
-      if (shouldRetry(attempt, retryCount, response)) {
+      lastResponse = await axios(reqConfig)
+      if (shouldRetry(attempt, retryCount, lastResponse)) {
         await sleep(retryDelay)
         continue
       }
-      return { status: response.status, data: response.data, attempts: attempt + 1 }
+      return { status: lastResponse.status, data: lastResponse.data, attempts: attempt + 1 }
     } catch (err) {
+      lastError = err
       if (shouldRetry(attempt, retryCount, null)) {
         await sleep(retryDelay)
         continue
@@ -40,6 +44,9 @@ async function request(config) {
       throw err
     }
   }
+
+  if (lastError) throw lastError
+  return { status: lastResponse.status, data: lastResponse.data, attempts: retryCount + 1 }
 }
 
 function sleep(ms) {
