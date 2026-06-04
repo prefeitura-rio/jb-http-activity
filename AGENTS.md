@@ -8,7 +8,7 @@ Substitui o nó de HTTP Request do WeFlow (N8N) durante a migração de broker d
 ## Stack
 
 | Camada | Tecnologia |
-|---|---|---|
+|---|---|
 | Runtime | Node.js 20 LTS |
 | Backend | Express 4.x |
 | HTTP client | Axios 1.x |
@@ -78,7 +78,11 @@ jb-http-activity/
 │       ├── icon.png
 │       └── iconSmall.png
 ├── test/
-│   └── execute.test.js
+│   ├── execute.test.js           # expressionParser + responseMapper (40 testes)
+│   ├── authHandler.test.js       # None, Bearer, OAuth2 (12 testes)
+│   ├── httpClient.test.js        # shouldRetry (10 testes)
+│   ├── bigQueryLogger.test.js    # batching e fallback (5 testes)
+│   └── execute.integration.test.js  # Endpoint /execute mockado (4 testes)
 ├── k8s/
 │   ├── staging/
 │   │   ├── resources.yaml         # Deployment + Service + PDB (1 réplica)

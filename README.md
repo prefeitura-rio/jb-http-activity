@@ -40,7 +40,7 @@ BigQuery (rj-crm-registry.jb_http_activity.logs)
 ## Stack
 
 | Layer | Technology |
-|---|---|---|
+|---|---|
 | Backend | Node.js 20 + Express |
 | Frontend | Vue.js 3 + Vite |
 | HTTP | Axios |
