@@ -1,15 +1,19 @@
-FROM node:20-alpine
-
+FROM node:20-alpine AS build
+RUN apk add --no-cache yarn
 WORKDIR /app
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
+COPY . .
+RUN yarn build
 
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY dist/ ./dist/
+FROM node:20-alpine
+RUN apk add --no-cache yarn
+WORKDIR /app
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile --production
+COPY --from=build /app/dist ./dist
 COPY server/ ./server/
 COPY public/ ./public/
-
 EXPOSE 8080
 ENV PORT=8080
-
 CMD ["node", "server/index.js"]
