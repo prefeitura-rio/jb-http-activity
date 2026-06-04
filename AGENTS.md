@@ -232,6 +232,10 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 
 **Limitação:** Os logs são voláteis (perdidos no restart) e não persistem histórico completo. O log histórico está no BigQuery.
 
+### ADR-006: Tratamento de comparações no expressionParser
+
+**Decisão:** O `IF()` suporta os operadores `==` e `!=` para comparar campos do response com literais. Ex: `IF(status=="ATIVA","sim","não")`. Operadores `>`, `<`, `>=`, `<=` não foram implementados por enquanto.
+
 ---
 
 ## Variáveis de Ambiente
@@ -260,9 +264,10 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 - [ ] Auth handler trata None, Bearer e OAuth2 client_credentials
 - [ ] `treatErrorsAsOutput` respeitado na resposta do `/execute`
 - [ ] Timeout configurável respeitado (1s-100s)
-- [ ] Retry lógica: idempotente (mesmo activityId+definitionInstanceId = mesmo resultado)
+- [ ] Retry lógico: respeita retryCount e retryDelay configurados pelo operador
 - [ ] logStore.push() chamado em toda execução (sucesso e erro)
 - [ ] bigQueryLogger.log() fire-and-forget chamado em toda execução
+- [ ] `_preview` retorna `_duration`, `_timestamp`, `_url`, `_attempts` para preview na UI
 - [ ] `GET /logs?type=errors` retorna apenas execuções com falha
 
 ### Frontend
@@ -320,10 +325,10 @@ kubectl set image deployment/jb-http-activity app=ghcr.io/prefeitura-rio/jb-http
 2. Add Component → Journey Builder Activity
    - Endpoint URL: URL do ingress GKE (ex: `https://jb-http-activity.pref.rio`)
    - Category: Custom
-3. Copiar **Unique Key** → `public/config.json > configurationArguments.applicationExtensionKey`
+3. Copiar **Unique Key** → GitHub Secrets como `SFMC_ACTIVITY_KEY_PRODUCTION` (a key é injetada via `--build-arg` no Docker, não mais manual no config.json)
 4. Copiar **App Signing Secret** → Infisical (SuperApp) como `JWT_SECRET`
 
-**Staging:** Para testar alterações antes de subir pra produção, crie um segundo Installed Package apontando pra URL de staging (ex: `jb-http-activity-staging.pref.rio`) com seu próprio App Signing Secret no `envSlug: staging` do Infisical.
+**Staging:** Para testar alterações antes de subir pra produção, crie um segundo Installed Package apontando pra URL de staging (ex: `jb-http-activity-staging.pref.rio`) com seu próprio App Signing Secret no `envSlug: staging` do Infisical. A Unique Key de staging vai como `SFMC_ACTIVITY_KEY_STAGING` no GitHub Secrets.
 
 ---
 
