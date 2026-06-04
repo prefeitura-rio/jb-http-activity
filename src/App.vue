@@ -12,7 +12,6 @@
       <TabRequest v-show="activeTab === 'request'" ref="requestRef" :schema="schema" :initial-data="config" />
       <TabAuth v-show="activeTab === 'auth'" ref="authRef" :schema="schema" />
       <TabResponse v-show="activeTab === 'response'" ref="responseRef" :initial-data="config" />
-      <TabLogs v-show="activeTab === 'logs'" ref="logsRef" :initial-data="config" />
     </div>
   </div>
 </template>
@@ -23,14 +22,12 @@ import ActivityName from './components/ActivityName.vue'
 import TabRequest from './components/tabs/TabRequest.vue'
 import TabAuth from './components/tabs/TabAuth.vue'
 import TabResponse from './components/tabs/TabResponse.vue'
-import TabLogs from './components/tabs/TabLogs.vue'
 
 const activeTab = ref('request')
 const tabs = [
   { id: 'request', label: 'Request' },
   { id: 'auth', label: 'Auth' },
-  { id: 'response', label: 'Response' },
-  { id: 'logs', label: 'Logs' }
+  { id: 'response', label: 'Response' }
 ]
 
 const config = ref({})

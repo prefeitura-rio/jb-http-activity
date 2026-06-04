@@ -11,11 +11,13 @@
     "test": "mocha test/**/*.test.js --timeout 30000"
   },
   "dependencies": {
+    "@google-cloud/bigquery": "^7.0.0",
     "axios": "^1.7.0",
     "dotenv": "^17.4.2",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.0",
-    "postmonger": "^0.0.16"
+    "postmonger": "^0.0.16",
+    "vue": "^3.5.35"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

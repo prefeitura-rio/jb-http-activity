@@ -35,11 +35,35 @@
         {{ testing ? 'Executando...' : 'Executar com dados de teste' }}
       </button>
       <div v-if="testResponse" class="test-response">
-        <div class="response-meta">{{ testResponse.statusCode }} OK  -  {{ testResponse.duration }}ms</div>
-        <pre>{{ testResponse.body }}</pre>
-        <div v-for="(val, key) in testResponse.mapped" :key="key" class="mapped-result" :class="mappedClass(val)" v-text="mappedText(key, val)"></div>
+        <div v-if="testResponse.isError" class="response-error-header">
+          <span class="error-badge">{{ testResponse.statusCode }} {{ testResponse.statusText }}</span>
+        </div>
+        <div v-else class="response-ok-header">
+          <span class="ok-badge">{{ testResponse.statusCode }} OK</span>
+        </div>
+        <div class="response-meta">
+          <span class="meta-url">{{ testResponse.url }}</span>
+          <span class="meta-duration">{{ testResponse.duration }}ms</span>
+          <span class="meta-timestamp">{{ testResponse.timestamp }}</span>
+        </div>
+        <div v-if="testResponse.body" class="response-body">
+          <pre>{{ testResponse.body }}</pre>
+        </div>
+        <div class="response-mappings">
+          <div v-for="(val, key) in testResponse.mapped" :key="key" class="mapped-result" :class="mappedClass(val)" v-text="mappedText(key, val)"></div>
+        </div>
       </div>
-      <div v-if="testError" class="test-error">{{ testError }}</div>
+      <div v-if="testError" class="test-error">
+        <div class="error-header-bar">
+          <span class="error-badge-large">{{ testError.statusCode || '—' }} {{ testError.statusText || 'Erro' }}</span>
+        </div>
+        <div class="error-detail">
+          <div class="error-url">{{ testError.url }}</div>
+          <div v-if="testError.duration" class="error-duration">{{ testError.duration }}ms</div>
+          <div class="error-timestamp">{{ testError.timestamp }}</div>
+          <div class="error-message-text">{{ testError.message }}</div>
+        </div>
+      </div>
     </div>
 
     <FunctionHelperModal :visible="showFunctions" @close="showFunctions = false" />
@@ -103,6 +127,25 @@ const allVariables = computed(() => {
   return [...builtins, ...mapped]
 })
 
+function formatTimestamp(ts) {
+  if (!ts) return ''
+  try {
+    return new Date(ts).toLocaleString('pt-BR')
+  } catch {
+    return ts
+  }
+}
+
+function truncateUrl(url) {
+  if (!url) return '—'
+  try {
+    const u = new URL(url)
+    return u.host + u.pathname
+  } catch {
+    return url.length > 50 ? url.substring(0, 50) + '...' : url
+  }
+}
+
 async function executeTest() {
   testing.value = true
   testError.value = ''
@@ -122,19 +165,32 @@ async function executeTest() {
       ]
     })
 
+    const isError = res.data.httpStatusCode >= 400
     const mapped = {}
     for (const m of responseMapping.value) {
       if (m.outputName) mapped[m.outputName] = res.data[m.outputName]
     }
 
     testResponse.value = {
+      isError,
       statusCode: res.data.httpStatusCode,
-      duration: 0,
-      body: res.data._rawBody || JSON.stringify(res.data, null, 2),
+      statusText: isError ? (res.data.httpStatusClass || 'Error') : 'OK',
+      url: truncateUrl(res.data._url || requestConfig.url),
+      duration: res.data._duration || 0,
+      timestamp: formatTimestamp(res.data._timestamp),
+      body: res.data._rawBody ? (typeof res.data._rawBody === 'string' ? res.data._rawBody : JSON.stringify(res.data._rawBody, null, 2)) : '',
       mapped: { ...mapped, httpStatusCode: res.data.httpStatusCode, httpSuccess: res.data.httpSuccess }
     }
   } catch (err) {
-    testError.value = 'Erro: ' + (err.message || 'conexao')
+    const errorData = err.response?.data
+    testError.value = {
+      statusCode: errorData?.httpStatusCode || err.response?.status || '—',
+      statusText: errorData?.httpStatusClass || 'Falha',
+      url: truncateUrl(requestConfig.url),
+      duration: errorData?._duration || 0,
+      timestamp: formatTimestamp(errorData?._timestamp),
+      message: err.response?.data?.error || err.message || 'Erro de conexao'
+    }
   } finally {
     testing.value = false
   }
@@ -174,5 +230,22 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .mapped-result { font-size: 12px; padding: 2px 4px; margin-top: 2px; border-radius: 2px; }
 .mapped-result.success { background: #d4edda; color: #155724; }
 .mapped-result.fail { background: #fff3cd; color: #856404; }
-.test-error { color: #721c24; background: #f8d7da; padding: 6px; border-radius: 3px; font-size: 12px; }
+.test-error { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 8px; margin-top: 8px; }
+.error-header-bar { margin-bottom: 6px; }
+.error-badge-large { display: inline-block; background: #dc3545; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+.error-detail { font-size: 12px; color: #555; }
+.error-url { font-family: monospace; font-size: 11px; color: #856404; word-break: break-all; margin-bottom: 2px; }
+.error-duration { font-size: 11px; color: #888; }
+.error-timestamp { font-size: 11px; color: #888; margin-bottom: 4px; }
+.error-message-text { color: #721c24; font-weight: 600; margin-top: 4px; }
+.response-error-header { margin-bottom: 4px; }
+.response-ok-header { margin-bottom: 4px; }
+.error-badge { display: inline-block; background: #dc3545; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+.ok-badge { display: inline-block; background: #28a745; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+.response-meta { display: flex; gap: 8px; font-size: 11px; color: #888; margin-bottom: 6px; flex-wrap: wrap; }
+.meta-url { font-family: monospace; color: #555; word-break: break-all; }
+.meta-duration { color: #666; white-space: nowrap; }
+.meta-timestamp { color: #888; white-space: nowrap; }
+.response-body pre { font-size: 11px; font-family: monospace; background: #fff; border: 1px solid #eee; border-radius: 3px; padding: 6px; overflow-x: auto; margin: 4px 0; }
+.response-mappings { margin-top: 4px; }
 </style>

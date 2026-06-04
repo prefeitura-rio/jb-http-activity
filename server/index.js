@@ -47,6 +47,14 @@ app.get('/config.json/config.js', (req, res) => {
   res.redirect('/config.json')
 })
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`jb-http-activity running on port ${PORT}`)
+})
+
+process.on('SIGTERM', () => {
+  server.close(() => process.exit(0))
+})
+
+process.on('SIGINT', () => {
+  server.close(() => process.exit(0))
 })

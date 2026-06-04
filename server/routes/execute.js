@@ -3,6 +3,7 @@ const { resolveAuth } = require('../lib/authHandler')
 const { extract } = require('../lib/responseMapper')
 const logger = require('../lib/structuredLogger')
 const logStore = require('../lib/logStore')
+const bigQueryLogger = require('../lib/bigQueryLogger')
 
 module.exports = async function executeRoute(req, res) {
   let config = {}
@@ -77,6 +78,11 @@ module.exports = async function executeRoute(req, res) {
 
     if (config._preview) {
       outArgs._rawBody = httpResponse.data
+      outArgs._duration = durationMs
+      outArgs._timestamp = new Date().toISOString()
+      outArgs._url = config.url
+      outArgs._method = config.method
+      outArgs._statusClass = statusClass
     }
 
     const logEntry = {
@@ -99,6 +105,7 @@ module.exports = async function executeRoute(req, res) {
 
     logger.info(logEntry)
     logStore.push(logEntry)
+    bigQueryLogger.log(logEntry)
 
     const treatErrors = config.treatErrorsAsOutput === true
 
@@ -137,6 +144,7 @@ module.exports = async function executeRoute(req, res) {
 
     logger.error(logEntry)
     logStore.push(logEntry)
+    bigQueryLogger.log(logEntry)
 
     return res.status(500).json({
       error: err.message || 'Erro interno do servidor',

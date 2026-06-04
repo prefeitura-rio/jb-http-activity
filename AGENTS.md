@@ -8,25 +8,26 @@ Substitui o nó de HTTP Request do WeFlow (N8N) durante a migração de broker d
 ## Stack
 
 | Camada | Tecnologia |
-|---|---|
+|---|---|---|
 | Runtime | Node.js 20 LTS |
 | Backend | Express 4.x |
 | HTTP client | Axios 1.x |
 | JWT | jsonwebtoken 9.x |
 | Frontend | Vue.js 3 + Vite 5 |
 | Comunicação iframe↔JB | Postmonger 1.x |
-| Hospedagem | GCP Cloud Run |
-| CI/CD | GitLab CI → Artifact Registry → Cloud Run |
-| Secrets | GCP Secret Manager |
-| Logs | Cloud Logging → BigQuery → Looker Studio |
+| Hospedagem | GKE (cluster `application` em `us-central1`) |
+| CI/CD | GitHub Actions → GHCR → ArgoCD |
+| Secrets | Infisical (SuperApp: `infisical-superapp.squirrel-regulus.ts.net`) |
+| Logs | BigQuery streaming insert direto (`rj-crm-registry.jb_http_activity.logs`) |
 | Logs (store) | In-memory circular buffer (`server/lib/logStore.js`) + `GET /logs` |
+| BigQuery client | `@google-cloud/bigquery` via ADC (Workload Identity) |
 
 ---
 
 ## Repositório
 
 - **Origem:** `G:\Outros computadores\Meu laptop\Documentos\Coding Repositories\jb-http-activity`
-- **GitLab:** `git@gitlab.prefeitura.rio:czrm/jb-http-activity.git`
+- **GitHub:** `https://github.com/prefeitura-rio/jb-http-activity.git`
 
 ---
 
@@ -51,7 +52,8 @@ jb-http-activity/
 │       ├── expressionParser.js# UPPER(x), ROUND(x,2), IF(cond,v,f), etc (16 funções)
 │       ├── responseMapper.js  # Orquestra expressionParser + dot notation
 │       ├── structuredLogger.js# stdout JSON → Cloud Logging → BigQuery
-│       └── logStore.js        # Circular buffer em memória (100 entradas)
+│       ├── logStore.js        # Circular buffer em memória (100 entradas)
+│       └── bigQueryLogger.js  # Streaming insert direto no BigQuery
 ├── src/                       # Vue.js 3 (Vite)
 │   ├── main.js
 │   ├── App.vue
@@ -62,8 +64,7 @@ jb-http-activity/
 │       ├── tabs/
 │       │   ├── TabRequest.vue
 │       │   ├── TabAuth.vue
-│       │   ├── TabResponse.vue
-│       │   └── TabLogs.vue
+│       │   └── TabResponse.vue
 │       └── shared/
 │           ├── KeyValueEditor.vue
 │           ├── VariablePicker.vue
@@ -78,8 +79,13 @@ jb-http-activity/
 │       └── iconSmall.png
 ├── test/
 │   └── execute.test.js
+├── k8s/
+│   ├── kustomization.yaml     # Kustomize overlay
+│   ├── resources.yaml         # Deployment + Service + PDB + KEDA
+│   └── infisical-secret.yaml  # InfisicalSecret CRD
+├── .github/workflows/
+│   └── deploy.yaml            # GitHub Actions CI/CD
 ├── Dockerfile
-├── .gitlab-ci.yml
 ├── package.json
 └── vite.config.js
 ```
@@ -196,9 +202,11 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 
 **Decisão:** Toggle `treatErrorsAsOutput`. Quando OFF, 4xx/5xx falham a activity. Quando ON, o servidor retorna 200 ao JB com `httpStatusCode` e `httpSuccess=false` nos outArguments, permitindo roteamento via Decision Split nativo.
 
-### ADR-002: Logs no BigQuery (sem DE no SFMC)
+### ADR-002: Logs no BigQuery via streaming insert direto
 
-**Decisão:** Todo log é feito como JSON estruturado no stdout do Cloud Run → Cloud Logging → BigQuery via sink. Não há Data Extension de log nem Server-to-Server API. Isso elimina dependência de credenciais SFMC adicionais e reduz complexidade.
+**Decisão:** O `@google-cloud/bigquery` faz streaming insert direto na tabela `rj-crm-registry.jb_http_activity.logs` usando ADC (Application Default Credentials). O GKE usa Workload Identity para assumir a service account `jb-http-activity-sa`. Não há Data Extension de log nem dependência de Cloud Logging sink.
+
+**Fallback:** Se o BigQuery falhar, o log cai no `structuredLogger` (stdout).
 
 ### ADR-003: expressionParser no backend (não no frontend)
 
@@ -210,11 +218,22 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 
 ### ADR-005: Logs em memória para feedback imediato na UI
 
-**Decisão:** Um `logStore.js` circular buffer (100 entradas) armazena os últimos logs de execução do `/execute`. Uma rota `GET /logs?type=errors` expõe os erros para a UI (TabLogs), que os exibe ao operador sem depender de Cloud Logging.
+**Decisão:** Um `logStore.js` circular buffer (100 entradas) armazena os últimos logs de execução do `/execute`. A rota `GET /logs` expõe os logs para debug manual via curl. A UI (TabResponse) exibe o preview detalhado do teste em tempo real, sem depender do logStore.
 
-**Limitação:** Os logs são voláteis (perdidos no restart) e não persistem histórico completo.
+**Limitação:** Os logs são voláteis (perdidos no restart) e não persistem histórico completo. O log histórico está no BigQuery.
 
-**Futuro (pós-hospedagem GCP):** Substituir a fonte de dados da TabLogs por consultas na API do Cloud Logging, mantendo o `logStore` como fallback rápido. O endpoint `GET /logs` permanece o mesmo — a implementação interna do route muda para buscar do Cloud Logging em vez da memória.
+---
+
+## Variáveis de Ambiente
+
+| Variável | Obrigatória | Padrão | Descrição |
+|---|---|---|---|
+| `JWT_SECRET` | Sim | — | App Signing Secret do SFMC (via Infisical) |
+| `JWT_DISABLED` | Não | `false` | `true` para pular validação JWT em dev |
+| `PORT` | Não | `3000` | Porta do servidor HTTP |
+| `NODE_ENV` | Não | `development` | Ambiente (usado como campo `environment` no BigQuery) |
+| `BIGQUERY_DATASET` | Não | `jb_http_activity` | Dataset no BigQuery |
+| `BIGQUERY_TABLE` | Não | `logs` | Tabela no BigQuery |
 
 ---
 
@@ -233,14 +252,14 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 - [ ] Timeout configurável respeitado (1s-100s)
 - [ ] Retry lógica: idempotente (mesmo activityId+definitionInstanceId = mesmo resultado)
 - [ ] logStore.push() chamado em toda execução (sucesso e erro)
+- [ ] bigQueryLogger.log() fire-and-forget chamado em toda execução
 - [ ] `GET /logs?type=errors` retorna apenas execuções com falha
 
 ### Frontend
 - [ ] Postmonger mock funcional em dev
 - [ ] Aba Request: método, URL, headers, params, body, content-type, opções avançadas
 - [ ] Aba Auth: None, Bearer, OAuth2 formulários + "Testar conexão"
-- [ ] Aba Response: built-ins, expressões, FunctionHelperModal, teste com preview
-- [ ] Aba Logs: exibe último erro (via `GET /logs?type=errors`)
+- [ ] Aba Response: built-ins, expressões, FunctionHelperModal, teste com preview detalhado (timestamp, URL, duração, status, mapeamento)
 - [ ] Schema de outArguments enviado via `trigger('updateActivity')`
 - [ ] `clickedNext` → constrói payload e chama `updateActivity`
 - [ ] Nome da atividade persiste e aparece no canvas
@@ -265,19 +284,14 @@ Definidos pelo operador na aba Response via expressões de transformação. O sc
 ## Deploy
 
 ```bash
-# Manual
-gcloud run deploy jb-http-activity \
-  --image IMAGE \
-  --region us-east1 \
-  --platform managed \
-  --allow-unauthenticated \
-  --set-secrets JWT_SECRET=jb-http-activity-jwt:latest \
-  --memory 256Mi --cpu 1 --min-instances 0 --max-instances 10 --timeout 120
+# GitHub Actions faz tudo automaticamente no push para main
+# 1. Build + push imagem para ghcr.io/prefeitura-rio/jb-http-activity
+# 2. Atualiza ArgoCD Application via kubectl patch
+# 3. ArgoCD sincroniza o Deployment no GKE
 
-# Sink BigQuery (1 vez)
-gcloud logging sinks create jb-http-activity-bq-sink \
-  bigquery.googleapis.com/projects/PROJECT_ID/datasets/jb_http_activity_logs \
-  --log-filter="resource.type=cloud_run_revision AND resource.labels.service_name=jb-http-activity"
+# Manual (emergência):
+gcloud container clusters get-credentials application --zone=us-central1 --project=rj-crm-registry
+kubectl set image deployment/jb-http-activity app=ghcr.io/prefeitura-rio/jb-http-activity:<tag> -n jb-http-activity
 ```
 
 ---
@@ -286,10 +300,10 @@ gcloud logging sinks create jb-http-activity-bq-sink \
 
 1. Setup → Installed Packages → New → `jb-http-activity`
 2. Add Component → Journey Builder Activity
-   - Endpoint URL: URL do Cloud Run
+   - Endpoint URL: URL do ingress GKE (ex: `https://jb-http-activity.pref.rio`)
    - Category: Custom
 3. Copiar **Unique Key** → `public/config.json > configurationArguments.applicationExtensionKey`
-4. Copiar **App Signing Secret** → GCP Secret Manager como `jb-http-activity-jwt`
+4. Copiar **App Signing Secret** → Infisical (SuperApp) como `JWT_SECRET`
 
 ---
 

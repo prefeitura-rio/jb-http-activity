@@ -17,7 +17,7 @@ Journey Builder lacks a native node for making arbitrary HTTP calls to external 
 - Toggle "Treat HTTP errors as output" — 4xx/5xx can be routed via native Decision Split
 - Content-Type dropdown: `application/json`, `form-urlencoded`, `multipart/form-data`
 - Test button with response preview
-- Logs via Cloud Run → Cloud Logging → BigQuery → Looker Studio
+- Logs via BigQuery streaming insert (`rj-crm-registry.jb_http_activity.logs`)
 
 ## Architecture
 
@@ -25,39 +25,42 @@ Journey Builder lacks a native node for making arbitrary HTTP calls to external 
 Salesforce Marketing Cloud (Journey Builder)
        │ POST /execute
        ▼
-GCP Cloud Run (jb-http-activity)
+GKE (cluster application - us-central1)
        │
        ├── Express server + JWT verify
        ├── httpClient (Axios) → external APIs
        ├── expressionParser (transform functions)
-       └── responseMapper (dot notation + expressions)
+       ├── responseMapper (dot notation + expressions)
+       └── bigQueryLogger (streaming insert)
        │
-       ▼ stdout JSON
-Cloud Logging → BigQuery → Looker Studio dashboard
+       ▼
+BigQuery (rj-crm-registry.jb_http_activity.logs)
 ```
 
 ## Stack
 
 | Layer | Technology |
-|---|---|
+|---|---|---|
 | Backend | Node.js 20 + Express |
 | Frontend | Vue.js 3 + Vite |
 | HTTP | Axios |
 | iframe↔JB | Postmonger |
-| Hosting | GCP Cloud Run |
-| CI/CD | GitLab CI |
-| Logs | Cloud Logging → BigQuery → Looker Studio |
+| Hosting | GKE |
+| CI/CD | GitHub Actions → GHCR → ArgoCD |
+| Secrets | Infisical (SuperApp) |
+| Logs | BigQuery streaming insert |
 
 ## Project Structure
 
 ```
 jb-http-activity/
-├── server/          # Express backend (JWT, execute, lifecycle, expressionParser)
-├── src/             # Vue.js 3 frontend (tabs: Request, Auth, Response, Logs)
+├── server/          # Express backend (JWT, execute, lifecycle, expressionParser, bigQueryLogger)
+├── src/             # Vue.js 3 frontend (tabs: Request, Auth, Response)
 ├── public/          # config.json, postmonger.js, icons
+├── k8s/             # Kubernetes manifests (Deployment, Service, PDB, KEDA, InfisicalSecret)
 ├── test/            # Mocha tests
+├── .github/         # GitHub Actions workflows
 ├── Dockerfile
-├── .gitlab-ci.yml
 └── package.json
 ```
 
