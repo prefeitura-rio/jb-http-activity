@@ -44,7 +44,7 @@
         <div class="response-meta">
           <span class="meta-url">{{ testResponse.url }}</span>
           <span class="meta-duration">{{ testResponse.duration }}ms</span>
-          <span class="meta-attempts" v-if="testResponse.attempts > 1">{{ testResponse.attempts }} tentativas</span>
+          <span class="meta-attempts" v-if="testResponse.attempts > 1">{{ testResponse.attempts - 1 }} retentativa{{ testResponse.attempts > 2 ? 's' : '' }}</span>
           <span class="meta-timestamp">{{ testResponse.timestamp }}</span>
         </div>
         <div v-if="testResponse.body" class="response-body">
@@ -62,7 +62,7 @@
           <div class="error-url">{{ testError.url }}</div>
           <div class="error-meta-row">
             <span v-if="testError.duration" class="error-duration">{{ testError.duration }}ms</span>
-            <span v-if="testError.attempts > 1" class="error-attempts">{{ testError.attempts }} tentativas</span>
+            <span class="error-attempts" v-if="testError.attempts > 1">{{ testError.attempts - 1 }} retentativa{{ testError.attempts > 2 ? 's' : '' }}</span>
             <span class="error-timestamp">{{ testError.timestamp }}</span>
           </div>
           <div class="error-message-text">{{ testError.message }}</div>
@@ -165,7 +165,7 @@ async function executeTest() {
         { body: requestConfig.body },
         { auth: requestConfig.auth },
         { responseMapping: responseMapping.value },
-        { treatErrorsAsOutput: true, timeout: requestConfig.timeout, _preview: true }
+        { treatErrorsAsOutput: true, timeout: requestConfig.timeout, retryCount: requestConfig.retryCount, retryDelay: requestConfig.retryDelay, _preview: true }
       ]
     })
 

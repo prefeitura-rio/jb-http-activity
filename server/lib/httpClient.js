@@ -34,6 +34,9 @@ async function request(config) {
         await sleep(retryDelay)
         continue
       }
+      if (lastResponse.status >= 400) {
+        break
+      }
       return { status: lastResponse.status, data: lastResponse.data, attempts: attempt + 1 }
     } catch (err) {
       lastError = err
@@ -41,7 +44,7 @@ async function request(config) {
         await sleep(retryDelay)
         continue
       }
-      throw err
+      break
     }
   }
 
