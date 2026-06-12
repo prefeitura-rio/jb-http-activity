@@ -42,13 +42,22 @@ module.exports = async function executeRoute(req, res) {
     Object.assign(headersMap, authHeaders)
 
     let bodyData = null
+    const contentType = config.contentType || 'application/json'
 
     if (config.body && ['POST', 'PUT', 'PATCH'].includes(config.method)) {
-      try {
-        bodyData = JSON.parse(config.body)
-      } catch {
+      if (contentType === 'application/json') {
+        try {
+          bodyData = JSON.parse(config.body)
+        } catch {
+          bodyData = config.body
+        }
+      } else {
         bodyData = config.body
       }
+    }
+
+    if (!headersMap['Content-Type'] && !headersMap['content-type']) {
+      headersMap['Content-Type'] = contentType
     }
 
     const startTime = Date.now()

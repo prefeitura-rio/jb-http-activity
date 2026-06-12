@@ -128,13 +128,15 @@ onMounted(async () => {
       baseUrl = idx > 0 ? url.substring(0, idx) : url
       executeUrl = url
     }
-  } catch {}
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.error('Erro ao carregar config.json:', err)
+    }
+  }
 
   connection = new window.Postmonger.Session()
 
   connection.on('initActivity', function(data) {
-    console.log('INIT RECEBIDO', data)
-
     const args = data && data.arguments && data.arguments.execute && data.arguments.execute.inArguments
 
     if (args && args.length) {
@@ -158,6 +160,9 @@ onMounted(async () => {
 
   connection.on('clickedNext', saveActivity)
   connection.on('clickedDone', saveActivity)
+  connection.on('clickedBack', function() {
+    connection.trigger('ready')
+  })
 
   connection.trigger('ready')
 })
@@ -178,10 +183,10 @@ function saveActivity() {
         outArguments: outArgumentsValues,
         url: executeUrl,
         verb: 'POST',
-        useJwt: false,
-        timeout: 30000,
-        retryCount: 2,
-        retryDelay: 2000,
+        useJwt: true,
+        timeout: 20000,
+        retryCount: 1,
+        retryDelay: 1000,
         concurrentRequests: 5
       }
     },
@@ -189,22 +194,22 @@ function saveActivity() {
       save: {
         url: `${baseUrl}/save`,
         verb: 'POST',
-        useJwt: false
+        useJwt: true
       },
       validate: {
         url: `${baseUrl}/validate`,
         verb: 'POST',
-        useJwt: false
+        useJwt: true
       },
       publish: {
         url: `${baseUrl}/publish`,
         verb: 'POST',
-        useJwt: false
+        useJwt: true
       },
       stop: {
         url: `${baseUrl}/stop`,
         verb: 'POST',
-        useJwt: false
+        useJwt: true
       }
     },
     schema: {
@@ -216,7 +221,9 @@ function saveActivity() {
     }
   }
 
-  console.log('UPDATE ACTIVITY PAYLOAD', JSON.stringify(payload, null, 2))
+  if (import.meta.env.DEV) {
+    console.log('UpdateActivity payload:', JSON.stringify(payload, null, 2))
+  }
   connection.trigger('updateActivity', payload)
 }
 </script>

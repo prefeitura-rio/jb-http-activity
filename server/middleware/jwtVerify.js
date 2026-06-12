@@ -5,7 +5,7 @@ module.exports = function jwtVerify(req, res, next) {
     return next()
   }
 
-  const token = req.body && req.body.jwtToken
+  const token = (req.body && req.body.jwtToken) || req.query.jwtToken
   if (!token) {
     return res.status(401).json({ error: 'JWT ausente' })
   }

@@ -62,12 +62,6 @@
         },
         {
           "httpSuccess": false
-        },
-        {
-          "titulo": ""
-        },
-        {
-          "usuario": 0
         }
       ],
       "timeout": 30000,
@@ -76,21 +70,30 @@
       "concurrentRequests": 5,
       "url": "http://localhost:3000/execute",
       "verb": "POST",
-      "useJwt": false
+      "useJwt": true
     }
   },
   "configurationArguments": {
     "applicationExtensionKey": "SUBSTITUIR_PELA_ACTIVITY_KEY",
     "save": {
       "url": "http://localhost:3000/save",
+      "verb": "POST",
+      "useJwt": true
+    },
     "validate": {
       "url": "http://localhost:3000/validate",
+      "verb": "POST",
+      "useJwt": true
+    },
     "publish": {
       "url": "http://localhost:3000/publish",
+      "verb": "POST",
+      "useJwt": true
+    },
     "stop": {
       "url": "http://localhost:3000/stop",
       "verb": "POST",
-      "useJwt": false
+      "useJwt": true
     }
   },
   "userInterfaces": {

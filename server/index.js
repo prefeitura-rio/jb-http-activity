@@ -38,7 +38,7 @@ app.post('/publish', jwtVerify, publishRoute)
 app.post('/save', jwtVerify, saveRoute)
 app.post('/stop', jwtVerify, stopRoute)
 
-app.get('/logs', logsRoute)
+app.get('/logs', jwtVerify, logsRoute)
 
 app.get('/config.js', (req, res) => {
   res.redirect('/config.json')
