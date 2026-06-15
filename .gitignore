@@ -16,3 +16,6 @@ coverage/
 
 # Discovery docs (local only)
 .opencode/
+
+# Local-only docs
+AGENTS.md
