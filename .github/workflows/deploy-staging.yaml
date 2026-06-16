@@ -3,87 +3,105 @@ name: Deploy to Staging
 on:
   push:
     branches:
-      - staging
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: staging
     permissions:
-      contents: write
+      contents: read
       packages: write
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Check if k8s-only changes
+        id: check-k8s-only
+        run: |
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          NON_K8S_FILES=$(echo "$CHANGED_FILES" | grep -v "^k8s/" || true)
+          if [ -z "$NON_K8S_FILES" ] && [ -n "$CHANGED_FILES" ]; then
+            echo "k8s_only=true" >> $GITHUB_OUTPUT
+          else
+            echo "k8s_only=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
       - name: Extract metadata
-        id: meta
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: |
-          COMMIT_HASH=${{ github.sha }}
-          SHORT_HASH=$(git rev-parse --short HEAD)
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/jb-http-activity"
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
-          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
-          echo "SHORT_HASH=$SHORT_HASH" >> $GITHUB_ENV
+          echo "IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/jb-http-activity" >> $GITHUB_ENV
+          echo "COMMIT_HASH=${{ github.sha }}" >> $GITHUB_ENV
 
       - name: Build and push Docker image
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: |
           docker buildx build \
             --platform linux/amd64 \
             --build-arg SFMC_ACTIVITY_KEY=${{ secrets.SFMC_ACTIVITY_KEY_STAGING }} \
+            --tag $IMAGE_NAME:latest \
             --tag $IMAGE_NAME:$COMMIT_HASH \
             --push .
 
       - name: Get image digest
-        id: digest
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: |
-          DIGEST=$(docker buildx imagetools inspect $IMAGE_NAME:$COMMIT_HASH --format '{{.Manifest.Digest}}' | grep -oE 'sha256:[a-f0-9]+' | head -n1)
+          DIGEST=$(docker buildx imagetools inspect $IMAGE_NAME:latest --format '{{.Manifest.Digest}}' | grep -oE 'sha256:[a-f0-9]+' | head -n1)
           echo "DIGEST=$DIGEST" >> $GITHUB_ENV
-          echo "Image digest: $DIGEST"
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v3
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
+        uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
 
       - name: Install gke-gcloud-auth-plugin
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: gcloud components install gke-gcloud-auth-plugin
 
       - name: Install kubectl
-        uses: azure/setup-kubectl@v5
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
+        uses: azure/setup-kubectl@v3
         with:
           version: latest
 
       - name: Configure kubectl for GKE
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: gcloud container clusters get-credentials application --zone=us-central1 --project="${{ vars.GCP_PROJECT_ID }}"
 
       - name: Update ArgoCD Application image
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: |
           kubectl patch application jb-http-activity-staging -n argocd --type=merge \
-            -p="{\"spec\":{\"source\":{\"kustomize\":{\"images\":[\"$IMAGE_NAME:$COMMIT_HASH@$DIGEST\"]}}}}"
+            -p="{\"spec\":{\"source\":{\"kustomize\":{\"images\":[\"$IMAGE_NAME:latest@$DIGEST\"]}}}}"
 
       - name: Wait for ArgoCD sync
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
         timeout-minutes: 10
         run: |
           for i in {1..60}; do
             SYNC_STATUS=$(kubectl get application jb-http-activity-staging -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
-            echo "Attempt $i/60: ArgoCD Sync=$SYNC_STATUS"
-            if [ "$SYNC_STATUS" = "Synced" ]; then
-              echo "ArgoCD sync complete"
+            HEALTH_STATUS=$(kubectl get application jb-http-activity-staging -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
+            echo "Attempt $i/60: Sync=$SYNC_STATUS Health=$HEALTH_STATUS"
+            if [ "$SYNC_STATUS" = "Synced" ] && [ "$HEALTH_STATUS" = "Healthy" ]; then
+              echo "Staging deploy complete"
               break
             fi
             if [ $i -eq 60 ]; then
@@ -95,19 +113,6 @@ jobs:
           done
 
       - name: Verify deployment
+        if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: |
           kubectl rollout status deployment/jb-http-activity -n jb-http-activity-staging --timeout=5m
-
-      - name: Create deployment summary
-        if: always()
-        run: |
-          echo "## jb-http-activity (staging) Deployment" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit**: $SHORT_HASH" >> $GITHUB_STEP_SUMMARY
-          echo "**Image**: \`$IMAGE_NAME:$COMMIT_HASH@${DIGEST:0:12}...\`" >> $GITHUB_STEP_SUMMARY
-          echo "**K8s**: k8s/staging/" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" = "success" ]; then
-            echo "### Deploy to Staging Successful" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### Deploy to Staging Failed" >> $GITHUB_STEP_SUMMARY
-          fi
