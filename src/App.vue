@@ -184,7 +184,7 @@ function saveActivity() {
         url: executeUrl,
         verb: 'POST',
         useJwt: true,
-        timeout: 20000,
+        timeout: (requestConfig.timeout || 30000) + 10000,
         retryCount: 1,
         retryDelay: 1000,
         concurrentRequests: 5

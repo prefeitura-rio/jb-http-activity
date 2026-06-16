@@ -11,7 +11,6 @@ export default defineConfig({
       '/validate': 'http://localhost:3000',
       '/publish': 'http://localhost:3000',
       '/stop': 'http://localhost:3000',
-      '/logs': 'http://localhost:3000',
       '/health': 'http://localhost:3000'
     }
   }
