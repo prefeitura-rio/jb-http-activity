@@ -32,6 +32,8 @@ spec:
           env:
             - name: NODE_ENV
               value: production
+            - name: UI_BASE_PATH
+              value: /jb-http-activity
           ports:
             - containerPort: 8080
           livenessProbe:
