@@ -89,7 +89,7 @@ jobs:
       - name: Update ArgoCD Application image
         if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: |
-          kubectl patch application jb-http-activity-staging -n argocd --type=merge \
+          kubectl patch application jb-http-activity -n argocd --type=merge \
             -p="{\"spec\":{\"source\":{\"kustomize\":{\"images\":[\"$IMAGE_NAME:latest@$DIGEST\"]}}}}"
 
       - name: Wait for ArgoCD sync
@@ -97,8 +97,8 @@ jobs:
         timeout-minutes: 10
         run: |
           for i in {1..60}; do
-            SYNC_STATUS=$(kubectl get application jb-http-activity-staging -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
-            HEALTH_STATUS=$(kubectl get application jb-http-activity-staging -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
+            SYNC_STATUS=$(kubectl get application jb-http-activity -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
+            HEALTH_STATUS=$(kubectl get application jb-http-activity -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
             echo "Attempt $i/60: Sync=$SYNC_STATUS Health=$HEALTH_STATUS"
             if [ "$SYNC_STATUS" = "Synced" ] && [ "$HEALTH_STATUS" = "Healthy" ]; then
               echo "Staging deploy complete"
@@ -106,7 +106,7 @@ jobs:
             fi
             if [ $i -eq 60 ]; then
               echo "Timeout waiting for ArgoCD sync"
-              kubectl get application jb-http-activity-staging -n argocd -o yaml
+              kubectl get application jb-http-activity -n argocd -o yaml
               exit 1
             fi
             sleep 5
@@ -115,4 +115,49 @@ jobs:
       - name: Verify deployment
         if: steps.check-k8s-only.outputs.k8s_only != 'true'
         run: |
-          kubectl rollout status deployment/jb-http-activity -n jb-http-activity-staging --timeout=5m
+          kubectl rollout status deployment/jb-http-activity -n jb-http-activity --timeout=5m
+
+      - name: Send Discord notification
+        if: always() && steps.check-k8s-only.outputs.k8s_only != 'true'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "Discord webhook not configured, skipping notification"
+            exit 0
+          fi
+
+          COMMIT_MSG=$(git log -1 --pretty=format:'%s' ${{ github.sha }})
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an' ${{ github.sha }})
+          COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+
+          if [ "${{ job.status }}" = "success" ]; then
+            STATUS_EMOJI="✅"
+            STATUS_TEXT="Succeeded"
+            COLOR="3066993"
+            DESCRIPTION="Staging deployment complete."
+          else
+            STATUS_EMOJI="❌"
+            STATUS_TEXT="Failed"
+            COLOR="15158332"
+            DESCRIPTION="Staging deployment failed."
+          fi
+
+          DISCORD_PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "${STATUS_EMOJI} jb-http-activity Staging ${STATUS_TEXT}",
+              "description": "${DESCRIPTION}",
+              "color": ${COLOR},
+              "fields": [
+                {"name": "📝 Commit", "value": "[${COMMIT_MSG:0:50}](${COMMIT_URL})", "inline": false},
+                {"name": "👤 Author", "value": "${COMMIT_AUTHOR}", "inline": true},
+                {"name": "🐳 Image", "value": "\`$IMAGE_NAME:$COMMIT_HASH\`", "inline": false}
+              ],
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)",
+              "footer": {"text": "GitHub Actions"}
+            }]
+          }
+          EOF
+          )
+          curl -s -X POST "$DISCORD_WEBHOOK" -H "Content-Type: application/json" -d "$DISCORD_PAYLOAD"

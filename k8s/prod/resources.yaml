@@ -4,7 +4,7 @@ kind: ServiceAccount
 metadata:
   name: jb-http-activity
   annotations:
-    iam.gke.io/gcp-service-account: jb-http-activity-sa@rj-crm-registry.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: jb-http-activity-sa@rj-superapp.iam.gserviceaccount.com
 ---
 apiVersion: apps/v1
 kind: Deployment

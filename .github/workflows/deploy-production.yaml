@@ -112,3 +112,48 @@ jobs:
           else
             echo "### Deploy to Production Failed" >> $GITHUB_STEP_SUMMARY
           fi
+
+      - name: Send Discord notification
+        if: always()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "Discord webhook not configured, skipping notification"
+            exit 0
+          fi
+
+          COMMIT_MSG=$(git log -1 --pretty=format:'%s')
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an')
+          COMMIT_URL="https://github.com/${{ github.repository }}/releases/tag/$VERSION"
+
+          if [ "${{ job.status }}" = "success" ]; then
+            STATUS_EMOJI="✅"
+            STATUS_TEXT="Succeeded"
+            COLOR="3066993"
+            DESCRIPTION="Production deployment complete."
+          else
+            STATUS_EMOJI="❌"
+            STATUS_TEXT="Failed"
+            COLOR="15158332"
+            DESCRIPTION="Production deployment failed."
+          fi
+
+          DISCORD_PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "${STATUS_EMOJI} jb-http-activity Production ${STATUS_TEXT}",
+              "description": "${DESCRIPTION}",
+              "color": ${COLOR},
+              "fields": [
+                {"name": "🏷️ Release", "value": "[$VERSION]($COMMIT_URL)", "inline": true},
+                {"name": "👤 Author", "value": "${COMMIT_AUTHOR}", "inline": true},
+                {"name": "🐳 Image", "value": "\`$IMAGE_NAME:$VERSION\`", "inline": false}
+              ],
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)",
+              "footer": {"text": "GitHub Actions"}
+            }]
+          }
+          EOF
+          )
+          curl -s -X POST "$DISCORD_WEBHOOK" -H "Content-Type: application/json" -d "$DISCORD_PAYLOAD"
