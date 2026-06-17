@@ -22,11 +22,19 @@ process.on('uncaughtException', (err) => {
 const app = express()
 const PORT = process.env.PORT || 3000
 
+const uiBasePath = (process.env.UI_BASE_PATH || '/').replace(/\/+$/, '') || '/'
+const isSubPath = uiBasePath !== '/'
+
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: true }))
 
 app.use(express.static(path.join(__dirname, '..', 'dist')))
 app.use(express.static(path.join(__dirname, '..', 'public')))
+
+if (isSubPath) {
+  app.use(uiBasePath, express.static(path.join(__dirname, '..', 'dist')))
+  app.use(uiBasePath, express.static(path.join(__dirname, '..', 'public')))
+}
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() })
@@ -40,12 +48,16 @@ app.post('/stop', jwtVerify, stopRoute)
 
 app.get('/logs', jwtVerify, logsRoute)
 
-app.get('/config.js', (req, res) => {
-  res.redirect('/config.json')
+const configJsPath = isSubPath ? `${uiBasePath}/config.js` : '/config.js'
+const configJsonConfigJsPath = isSubPath ? `${uiBasePath}/config.json/config.js` : '/config.json/config.js'
+const configJsonPath = isSubPath ? `${uiBasePath}/config.json` : '/config.json'
+
+app.get(configJsPath, (req, res) => {
+  res.redirect(configJsonPath)
 })
 
-app.get('/config.json/config.js', (req, res) => {
-  res.redirect('/config.json')
+app.get(configJsonConfigJsPath, (req, res) => {
+  res.redirect(configJsonPath)
 })
 
 const server = app.listen(PORT, () => {

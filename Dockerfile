@@ -3,6 +3,8 @@ RUN apk add --no-cache yarn
 WORKDIR /app
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
+ARG VITE_BASE_PATH
+ENV VITE_BASE_PATH=$VITE_BASE_PATH
 COPY . .
 RUN yarn build
 
