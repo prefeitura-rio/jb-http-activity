@@ -2,7 +2,6 @@ const { request } = require('../lib/httpClient')
 const { resolveAuth } = require('../lib/authHandler')
 const { extract } = require('../lib/responseMapper')
 const logger = require('../lib/structuredLogger')
-const logStore = require('../lib/logStore')
 const bigQueryLogger = require('../lib/bigQueryLogger')
 
 module.exports = async function executeRoute(req, res) {
@@ -51,6 +50,15 @@ module.exports = async function executeRoute(req, res) {
         } catch {
           bodyData = config.body
         }
+      } else if (contentType === 'application/x-www-form-urlencoded') {
+        bodyData = new URLSearchParams(config.body).toString()
+      } else if (contentType === 'multipart/form-data') {
+        const fd = new FormData()
+        for (const pair of config.body.split('&')) {
+          const idx = pair.indexOf('=')
+          if (idx > 0) fd.append(pair.slice(0, idx).trim(), pair.slice(idx + 1).trim())
+        }
+        bodyData = fd
       } else {
         bodyData = config.body
       }
@@ -116,7 +124,6 @@ module.exports = async function executeRoute(req, res) {
     }
 
     logger.info(logEntry)
-    logStore.push(logEntry)
     bigQueryLogger.log(logEntry)
 
     const treatErrors = config.treatErrorsAsOutput === true
@@ -155,7 +162,6 @@ module.exports = async function executeRoute(req, res) {
     }
 
     logger.error(logEntry)
-    logStore.push(logEntry)
     bigQueryLogger.log(logEntry)
 
     const errorResponse = {

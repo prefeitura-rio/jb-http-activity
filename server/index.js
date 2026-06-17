@@ -8,7 +8,6 @@ const validateRoute = require('./routes/validate')
 const publishRoute = require('./routes/publish')
 const saveRoute = require('./routes/save')
 const stopRoute = require('./routes/stop')
-const logsRoute = require('./routes/logs')
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason)
@@ -45,8 +44,6 @@ app.post('/validate', jwtVerify, validateRoute)
 app.post('/publish', jwtVerify, publishRoute)
 app.post('/save', jwtVerify, saveRoute)
 app.post('/stop', jwtVerify, stopRoute)
-
-app.get('/logs', jwtVerify, logsRoute)
 
 const configJsPath = isSubPath ? `${uiBasePath}/config.js` : '/config.js'
 const configJsonConfigJsPath = isSubPath ? `${uiBasePath}/config.json/config.js` : '/config.json/config.js'
