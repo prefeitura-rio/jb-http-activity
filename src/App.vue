@@ -120,7 +120,7 @@ function getDefaultValue(type) {
 
 onMounted(async () => {
   try {
-    const resp = await fetch('/config.json')
+    const resp = await fetch(`${import.meta.env.BASE_URL}config.json`)
     const appConfig = await resp.json()
     const url = appConfig.arguments?.execute?.url
     if (url) {
