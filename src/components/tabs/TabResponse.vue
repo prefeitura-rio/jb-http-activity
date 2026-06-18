@@ -159,7 +159,7 @@ async function executeTest() {
   testResponse.value = null
 
   try {
-    const res = await axios.post('/execute', {
+    const res = await axios.post(`${import.meta.env.BASE_URL}execute`, {
       inArguments: [
         { method: requestConfig.method },
         { url: requestConfig.url },
