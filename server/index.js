@@ -44,12 +44,18 @@ if (isSubPath) {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() })
 })
+if (isSubPath) {
+  app.get(`${uiBasePath}/health`, (req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime() })
+  })
+}
 
-app.post('/execute', jwtVerify, executeRoute)
-app.post('/validate', jwtVerify, validateRoute)
-app.post('/publish', jwtVerify, publishRoute)
-app.post('/save', jwtVerify, saveRoute)
-app.post('/stop', jwtVerify, stopRoute)
+const p = isSubPath ? uiBasePath : ''
+app.post(`${p}/execute`, jwtVerify, executeRoute)
+app.post(`${p}/validate`, jwtVerify, validateRoute)
+app.post(`${p}/publish`, jwtVerify, publishRoute)
+app.post(`${p}/save`, jwtVerify, saveRoute)
+app.post(`${p}/stop`, jwtVerify, stopRoute)
 
 const configJsPath = isSubPath ? `${uiBasePath}/config.js` : '/config.js'
 const configJsonConfigJsPath = isSubPath ? `${uiBasePath}/config.json/config.js` : '/config.json/config.js'
