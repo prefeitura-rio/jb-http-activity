@@ -1,5 +1,5 @@
 FROM node:20-alpine AS build
-RUN apk add --no-cache yarn
+RUN apk add --no-cache yarn=1.22.22-r1
 WORKDIR /app
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
@@ -9,10 +9,10 @@ COPY . .
 RUN yarn build
 
 FROM node:20-alpine
-RUN apk add --no-cache yarn
+RUN apk add --no-cache yarn=1.22.22-r1
 WORKDIR /app
 COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --production
+RUN yarn install --frozen-lockfile --production && yarn cache clean
 COPY --from=build /app/dist ./dist
 COPY server/ ./server/
 ARG SFMC_ACTIVITY_KEY
