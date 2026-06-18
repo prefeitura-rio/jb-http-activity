@@ -51,6 +51,8 @@ jobs:
             --platform linux/amd64 \
             --no-cache \
             --build-arg SFMC_ACTIVITY_KEY=${{ secrets.SFMC_ACTIVITY_KEY_STAGING }} \
+            --build-arg SFMC_ACTIVITY_NAME="HTTP Request - Staging" \
+            --build-arg SFMC_BASE_URL=https://services.staging.app.dados.rio/jb-http-activity \
             --build-arg VITE_BASE_PATH=/jb-http-activity/ \
             --tag $IMAGE_NAME:latest \
             --tag $IMAGE_NAME:$COMMIT_HASH \

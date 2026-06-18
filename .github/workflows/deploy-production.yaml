@@ -41,6 +41,8 @@ jobs:
             --platform linux/amd64 \
             --no-cache \
             --build-arg SFMC_ACTIVITY_KEY=${{ secrets.SFMC_ACTIVITY_KEY_PRODUCTION }} \
+            --build-arg SFMC_ACTIVITY_NAME="HTTP Request" \
+            --build-arg SFMC_BASE_URL=https://services.app.dados.rio/jb-http-activity \
             --build-arg VITE_BASE_PATH=/jb-http-activity/ \
             --tag $IMAGE_NAME:$VERSION \
             --tag $IMAGE_NAME:$VERSION_NO_V \

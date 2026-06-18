@@ -9,7 +9,7 @@
   "type": "REST",
   "lang": {
     "en-US": {
-      "name": "HTTP Request",
+      "name": "SUBSTITUIR_PELO_NOME",
       "description": "Generic HTTP request node for Journey Builder"
     }
   },
@@ -68,7 +68,7 @@
       "retryCount": 2,
       "retryDelay": 2000,
       "concurrentRequests": 5,
-      "url": "http://localhost:3000/execute",
+      "url": "SUBSTITUIR_PELA_URL_BASE/execute",
       "verb": "POST",
       "useJwt": true
     }
@@ -76,22 +76,22 @@
   "configurationArguments": {
     "applicationExtensionKey": "SUBSTITUIR_PELA_ACTIVITY_KEY",
     "save": {
-      "url": "http://localhost:3000/save",
+      "url": "SUBSTITUIR_PELA_URL_BASE/save",
       "verb": "POST",
       "useJwt": true
     },
     "validate": {
-      "url": "http://localhost:3000/validate",
+      "url": "SUBSTITUIR_PELA_URL_BASE/validate",
       "verb": "POST",
       "useJwt": true
     },
     "publish": {
-      "url": "http://localhost:3000/publish",
+      "url": "SUBSTITUIR_PELA_URL_BASE/publish",
       "verb": "POST",
       "useJwt": true
     },
     "stop": {
-      "url": "http://localhost:3000/stop",
+      "url": "SUBSTITUIR_PELA_URL_BASE/stop",
       "verb": "POST",
       "useJwt": true
     }
