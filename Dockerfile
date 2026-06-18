@@ -17,7 +17,10 @@ COPY --from=build /app/dist ./dist
 COPY server/ ./server/
 ARG SFMC_ACTIVITY_KEY
 COPY public/ ./public/
-RUN if [ -n "$SFMC_ACTIVITY_KEY" ]; then sed -i "s/SUBSTITUIR_PELA_ACTIVITY_KEY/$SFMC_ACTIVITY_KEY/g" public/config.json; fi
+RUN if [ -n "$SFMC_ACTIVITY_KEY" ]; then \
+      sed -i "s/SUBSTITUIR_PELA_ACTIVITY_KEY/$SFMC_ACTIVITY_KEY/g" public/config.json; \
+      sed -i "s/SUBSTITUIR_PELA_ACTIVITY_KEY/$SFMC_ACTIVITY_KEY/g" dist/config.json; \
+    fi
 EXPOSE 8080
 ENV PORT=8080
 USER node
