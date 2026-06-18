@@ -50,12 +50,18 @@ if (isSubPath) {
   })
 }
 
-const p = isSubPath ? uiBasePath : ''
-app.post(`${p}/execute`, jwtVerify, executeRoute)
-app.post(`${p}/validate`, jwtVerify, validateRoute)
-app.post(`${p}/publish`, jwtVerify, publishRoute)
-app.post(`${p}/save`, jwtVerify, saveRoute)
-app.post(`${p}/stop`, jwtVerify, stopRoute)
+app.post('/execute', jwtVerify, executeRoute)
+app.post('/validate', jwtVerify, validateRoute)
+app.post('/publish', jwtVerify, publishRoute)
+app.post('/save', jwtVerify, saveRoute)
+app.post('/stop', jwtVerify, stopRoute)
+if (isSubPath) {
+  app.post(`${uiBasePath}/execute`, jwtVerify, executeRoute)
+  app.post(`${uiBasePath}/validate`, jwtVerify, validateRoute)
+  app.post(`${uiBasePath}/publish`, jwtVerify, publishRoute)
+  app.post(`${uiBasePath}/save`, jwtVerify, saveRoute)
+  app.post(`${uiBasePath}/stop`, jwtVerify, stopRoute)
+}
 
 const configJsPath = isSubPath ? `${uiBasePath}/config.js` : '/config.js'
 const configJsonConfigJsPath = isSubPath ? `${uiBasePath}/config.json/config.js` : '/config.json/config.js'
