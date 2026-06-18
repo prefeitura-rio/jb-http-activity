@@ -19,3 +19,6 @@ coverage/
 
 # Local-only docs
 AGENTS.md
+
+# Playwright MCP artifacts
+.playwright-mcp/

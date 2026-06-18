@@ -5,6 +5,12 @@ module.exports = function jwtVerify(req, res, next) {
     return next()
   }
 
+  const inArgs = req.body && req.body.inArguments
+  const isPreview = Array.isArray(inArgs) && inArgs.some(a => a._preview === true)
+  if (isPreview) {
+    return next()
+  }
+
   const token = (req.body && req.body.jwtToken) || req.query.jwtToken
   if (!token) {
     return res.status(401).json({ error: 'JWT ausente' })
