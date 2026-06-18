@@ -23,26 +23,84 @@ jobs:
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Run Trivy (Vulnerability Scanning)
+        id: trivy
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
           scan-ref: .
-          format: sarif
-          output: trivy-results.sarif
+          format: table
+          output: trivy-results.txt
           severity: CRITICAL,HIGH
+          exit-code: '0'
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Format Trivy results
         if: always()
+        id: format
+        run: |
+          if [ -s trivy-results.txt ]; then
+            RESULTS=$(cat trivy-results.txt)
+            if echo "$RESULTS" | grep -qE "CRITICAL|HIGH"; then
+              STATUS="❌ Vulnerabilidades encontradas"
+            else
+              STATUS="✅ Nenhuma vulnerabilidade CRITICAL ou HIGH encontrada"
+            fi
+          else
+            RESULTS="Nenhum resultado."
+            STATUS="✅ Nenhuma vulnerabilidade CRITICAL ou HIGH encontrada"
+          fi
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          {
+            echo 'results<<EOF'
+            echo "$RESULTS"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Find previous security comment
+        uses: peter-evans/find-comment@v2
+        id: find-comment
         with:
-          sarif_file: trivy-results.sarif
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '<!-- trivy-security-scan -->'
+
+      - name: Create or update security comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            <!-- trivy-security-scan -->
+            ## 🔒 Security Scanning (Trivy)
+
+            ${{ steps.format.outputs.status }}
+
+            <details>
+            <summary>Ver resultado completo</summary>
+
+            ```
+            ${{ steps.format.outputs.results }}
+            ```
+
+            </details>
+
+            > Scan: `CRITICAL` e `HIGH` · Commit: `${{ github.sha }}`
+
+      - name: Fail if vulnerabilities found
+        if: always()
+        run: |
+          if grep -qE "CRITICAL|HIGH" trivy-results.txt 2>/dev/null; then
+            echo "Vulnerabilidades CRITICAL ou HIGH encontradas. Verifique o comentário no PR."
+            exit 1
+          fi
 
   test:
     name: Unit Tests
