@@ -15,8 +15,8 @@ COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile --production
 COPY --from=build /app/dist ./dist
 COPY server/ ./server/
-COPY public/ ./public/
 ARG SFMC_ACTIVITY_KEY
+COPY public/ ./public/
 RUN if [ -n "$SFMC_ACTIVITY_KEY" ]; then sed -i "s/SUBSTITUIR_PELA_ACTIVITY_KEY/$SFMC_ACTIVITY_KEY/g" public/config.json; fi
 EXPOSE 8080
 ENV PORT=8080
