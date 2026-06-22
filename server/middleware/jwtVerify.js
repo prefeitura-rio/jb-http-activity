@@ -11,7 +11,9 @@ module.exports = function jwtVerify(req, res, next) {
     return next()
   }
 
-  const token = (req.body && req.body.jwtToken) || req.query.jwtToken
+  const authHeader = req.headers.authorization
+  const bearerToken = authHeader && authHeader.startsWith('Bearer ') && authHeader.slice(7)
+  const token = (req.body && req.body.jwtToken) || req.query.jwtToken || bearerToken
   if (!token) {
     return res.status(401).json({ error: 'JWT ausente' })
   }
