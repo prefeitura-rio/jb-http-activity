@@ -50,17 +50,22 @@ if (isSubPath) {
   })
 }
 
+function debugBody(req, res, next) {
+  console.log(`[debug] ${req.method} ${req.path} - keys:`, Object.keys(req.body || {}), '- body:', JSON.stringify(req.body).substring(0, 1000))
+  next()
+}
+
 app.post('/execute', jwtVerify, executeRoute)
-app.post('/validate', validateRoute)
-app.post('/publish', publishRoute)
-app.post('/save', saveRoute)
-app.post('/stop', stopRoute)
+app.post('/validate', debugBody, validateRoute)
+app.post('/publish', debugBody, publishRoute)
+app.post('/save', debugBody, saveRoute)
+app.post('/stop', debugBody, stopRoute)
 if (isSubPath) {
   app.post(`${uiBasePath}/execute`, jwtVerify, executeRoute)
-  app.post(`${uiBasePath}/validate`, validateRoute)
-  app.post(`${uiBasePath}/publish`, publishRoute)
-  app.post(`${uiBasePath}/save`, saveRoute)
-  app.post(`${uiBasePath}/stop`, stopRoute)
+  app.post(`${uiBasePath}/validate`, debugBody, validateRoute)
+  app.post(`${uiBasePath}/publish`, debugBody, publishRoute)
+  app.post(`${uiBasePath}/save`, debugBody, saveRoute)
+  app.post(`${uiBasePath}/stop`, debugBody, stopRoute)
 }
 
 const configJsPath = isSubPath ? `${uiBasePath}/config.js` : '/config.js'
