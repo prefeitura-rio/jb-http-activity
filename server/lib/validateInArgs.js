@@ -1,7 +1,7 @@
 function validateInArgs(body) {
   const inArgs = body && body.inArguments
   if (!inArgs || !Array.isArray(inArgs)) {
-    return { valid: false, error: 'inArguments ausentes' }
+    return { valid: true, config: {} }
   }
 
   const config = inArgs.reduce((acc, arg) => ({ ...acc, ...arg }), {})
