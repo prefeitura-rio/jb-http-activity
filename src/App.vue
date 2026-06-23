@@ -183,7 +183,6 @@ function saveActivity() {
         outArguments: outArgumentsValues,
         url: executeUrl,
         verb: 'POST',
-        useJwt: true,
         timeout: (requestConfig.timeout || 30000) + 10000,
         retryCount: 1,
         retryDelay: 1000,
@@ -191,25 +190,22 @@ function saveActivity() {
       }
     },
     configurationArguments: {
+      useJwt: true,
       save: {
         url: `${baseUrl}/save`,
-        verb: 'POST',
-        useJwt: true
+        verb: 'POST'
       },
       validate: {
         url: `${baseUrl}/validate`,
-        verb: 'POST',
-        useJwt: true
+        verb: 'POST'
       },
       publish: {
         url: `${baseUrl}/publish`,
-        verb: 'POST',
-        useJwt: true
+        verb: 'POST'
       },
       stop: {
         url: `${baseUrl}/stop`,
-        verb: 'POST',
-        useJwt: true
+        verb: 'POST'
       }
     },
     schema: {
