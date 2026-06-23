@@ -69,31 +69,27 @@
       "retryDelay": 2000,
       "concurrentRequests": 5,
       "url": "SUBSTITUIR_PELA_URL_BASE/execute",
-      "verb": "POST",
-      "useJwt": true
+      "verb": "POST"
     }
   },
   "configurationArguments": {
     "applicationExtensionKey": "SUBSTITUIR_PELA_ACTIVITY_KEY",
+    "useJwt": true,
     "save": {
       "url": "SUBSTITUIR_PELA_URL_BASE/save",
-      "verb": "POST",
-      "useJwt": true
+      "verb": "POST"
     },
     "validate": {
       "url": "SUBSTITUIR_PELA_URL_BASE/validate",
-      "verb": "POST",
-      "useJwt": true
+      "verb": "POST"
     },
     "publish": {
       "url": "SUBSTITUIR_PELA_URL_BASE/publish",
-      "verb": "POST",
-      "useJwt": true
+      "verb": "POST"
     },
     "stop": {
       "url": "SUBSTITUIR_PELA_URL_BASE/stop",
-      "verb": "POST",
-      "useJwt": true
+      "verb": "POST"
     }
   },
   "userInterfaces": {
