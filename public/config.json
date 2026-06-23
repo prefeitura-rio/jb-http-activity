@@ -69,7 +69,8 @@
       "retryDelay": 2000,
       "concurrentRequests": 5,
       "url": "SUBSTITUIR_PELA_URL_BASE/execute",
-      "verb": "POST"
+      "verb": "POST",
+      "useJwt": true
     }
   },
   "configurationArguments": {

@@ -24,6 +24,11 @@ const PORT = process.env.PORT || 3000
 const uiBasePath = (process.env.UI_BASE_PATH || '/').replace(/\/+$/, '') || '/'
 const isSubPath = uiBasePath !== '/'
 
+app.use(express.raw({
+  type: 'application/jwt',
+  limit: '10kb'
+}))
+
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: true }))
 
@@ -64,16 +69,16 @@ function debugBody(req, res, next) {
 }
 
 app.post('/execute', jwtVerify, executeRoute)
-app.post('/validate', debugBody, validateRoute)
-app.post('/publish', debugBody, publishRoute)
-app.post('/save', debugBody, saveRoute)
-app.post('/stop', debugBody, stopRoute)
+app.post('/validate', jwtVerify, validateRoute)
+app.post('/publish', jwtVerify, publishRoute)
+app.post('/save', jwtVerify, saveRoute)
+app.post('/stop', jwtVerify, stopRoute)
 if (isSubPath) {
   app.post(`${uiBasePath}/execute`, jwtVerify, executeRoute)
-  app.post(`${uiBasePath}/validate`, debugBody, validateRoute)
-  app.post(`${uiBasePath}/publish`, debugBody, publishRoute)
-  app.post(`${uiBasePath}/save`, debugBody, saveRoute)
-  app.post(`${uiBasePath}/stop`, debugBody, stopRoute)
+  app.post(`${uiBasePath}/validate`, jwtVerify, validateRoute)
+  app.post(`${uiBasePath}/publish`, jwtVerify, publishRoute)
+  app.post(`${uiBasePath}/save`, jwtVerify, saveRoute)
+  app.post(`${uiBasePath}/stop`, jwtVerify, stopRoute)
 }
 
 const configJsPath = isSubPath ? `${uiBasePath}/config.js` : '/config.js'
