@@ -5,6 +5,19 @@ module.exports = function jwtVerify(req, res, next) {
     return next()
   }
 
+  // Se o Content-Type for application/jwt, o body inteiro e o JWT
+  if (req.headers['content-type'] === 'application/jwt' && Buffer.isBuffer(req.body) && req.body.length > 0) {
+    try {
+      const token = req.body.toString('utf8')
+      const decoded = jwt.verify(token, process.env.JWT_SECRET)
+      req.jwtPayload = decoded
+      req.body = typeof decoded.body === 'object' ? decoded.body : decoded
+      return next()
+    } catch (err) {
+      return res.status(401).json({ error: 'JWT invalido' })
+    }
+  }
+
   const inArgs = req.body && req.body.inArguments
   const isPreview = Array.isArray(inArgs) && inArgs.some(a => a._preview === true)
   if (isPreview) {
