@@ -1,4 +1,5 @@
 const axios = require('axios')
+const { validateUrl } = require('./blocklist')
 
 function shouldRetry(attempt, retryCount, response) {
   if (attempt >= retryCount) return false
@@ -8,15 +9,22 @@ function shouldRetry(attempt, retryCount, response) {
 
 async function request(config) {
   const { method, url, headers, queryParams, body, timeout } = config
-  const retryCount = config.retryCount || 0
-  const retryDelay = config.retryDelay || 1000
+  const retryCount = Math.min(config.retryCount || 0, 3)
+  const retryDelay = Math.min(config.retryDelay || 1000, 5000)
+
+  if (url) {
+    const validation = await validateUrl(url)
+    if (!validation.valid) {
+      throw new Error(`URL bloqueada: ${validation.error}`)
+    }
+  }
 
   const reqConfig = {
     method: method || 'GET',
     url: url || '',
     headers: headers || {},
     params: queryParams || {},
-    timeout: timeout || 30000,
+    timeout: Math.min(timeout || 30000, 40000),
     validateStatus: () => true
   }
 

@@ -8,6 +8,7 @@ const validateRoute = require('./routes/validate')
 const publishRoute = require('./routes/publish')
 const saveRoute = require('./routes/save')
 const stopRoute = require('./routes/stop')
+const previewRoute = require('./routes/preview')
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason)
@@ -34,7 +35,6 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    console.log(`[debug] ERRO PARSE JSON - content-type: ${req.headers['content-type']}, content-length: ${req.headers['content-length']}`)
     return res.status(400).json({ error: 'JSON invalido' })
   }
   next(err)
@@ -63,22 +63,19 @@ if (isSubPath) {
   })
 }
 
-function debugBody(req, res, next) {
-  console.log(`[debug] ${req.method} ${req.path} - keys:`, Object.keys(req.body || {}), '- body:', JSON.stringify(req.body).substring(0, 1000))
-  next()
-}
-
 app.post('/execute', jwtVerify, executeRoute)
 app.post('/validate', jwtVerify, validateRoute)
 app.post('/publish', jwtVerify, publishRoute)
 app.post('/save', jwtVerify, saveRoute)
 app.post('/stop', jwtVerify, stopRoute)
+app.post('/preview', previewRoute)
 if (isSubPath) {
   app.post(`${uiBasePath}/execute`, jwtVerify, executeRoute)
   app.post(`${uiBasePath}/validate`, jwtVerify, validateRoute)
   app.post(`${uiBasePath}/publish`, jwtVerify, publishRoute)
   app.post(`${uiBasePath}/save`, jwtVerify, saveRoute)
   app.post(`${uiBasePath}/stop`, jwtVerify, stopRoute)
+  app.post(`${uiBasePath}/preview`, previewRoute)
 }
 
 const configJsPath = isSubPath ? `${uiBasePath}/config.js` : '/config.js'
