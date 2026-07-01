@@ -20,7 +20,7 @@
     "postmonger": "^0.0.16",
     "vue": "^3.5.35"
   },
-  "resolutions": {
+  "overrides": {
     "form-data": "4.0.6"
   },
   "devDependencies": {

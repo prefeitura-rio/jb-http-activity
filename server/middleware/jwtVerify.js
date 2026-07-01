@@ -2,39 +2,26 @@ const jwt = require('jsonwebtoken')
 
 module.exports = function jwtVerify(req, res, next) {
   if (process.env.JWT_DISABLED === 'true') {
-    return next()
-  }
-
-  // Se o Content-Type for application/jwt, o body inteiro e o JWT
-  if (req.headers['content-type'] === 'application/jwt' && Buffer.isBuffer(req.body) && req.body.length > 0) {
-    try {
-      const token = req.body.toString('utf8')
-      const decoded = jwt.verify(token, process.env.JWT_SECRET)
-      req.jwtPayload = decoded
-      req.body = typeof decoded.body === 'object' ? decoded.body : decoded
-      return next()
-    } catch (err) {
-      return res.status(401).json({ error: 'JWT invalido' })
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(500).json({ error: 'JWT_DISABLED nao permitido em producao' })
     }
-  }
-
-  const inArgs = req.body && req.body.inArguments
-  const isPreview = Array.isArray(inArgs) && inArgs.some(a => a._preview === true)
-  if (isPreview) {
+    console.warn('[WARN] JWT_DISABLED ativo')
     return next()
   }
 
-  const authHeader = req.headers.authorization
-  const bearerToken = authHeader && authHeader.startsWith('Bearer ') && authHeader.slice(7)
-  const token = (req.body && req.body.jwtToken) || (req.body && req.body.jwt) || req.query.jwtToken || bearerToken
+  if (req.headers['content-type'] !== 'application/jwt') {
+    return res.status(400).json({ error: 'Content-Type deve ser application/jwt' })
+  }
 
-  if (!token) {
-    return next()
+  if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+    return res.status(400).json({ error: 'Body vazio' })
   }
 
   try {
+    const token = req.body.toString('utf8')
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     req.jwtPayload = decoded
+    req.body = typeof decoded.body === 'object' ? decoded.body : decoded
     next()
   } catch (err) {
     return res.status(401).json({ error: 'JWT invalido' })

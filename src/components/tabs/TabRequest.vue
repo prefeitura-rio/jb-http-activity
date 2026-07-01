@@ -37,16 +37,16 @@
       <summary>Opções avançadas</summary>
       <div class="adv-grid">
         <div class="adv-field">
-          <label>Timeout (ms)</label>
-          <input v-model.number="timeout" type="number" min="1000" max="100000" />
+          <label>Timeout (ms) <span class="cap-hint">máx. 30s</span></label>
+          <input v-model.number="timeout" type="number" min="1000" max="30000" />
         </div>
         <div class="adv-field">
-          <label>Retentativas</label>
-          <input v-model.number="retryCount" type="number" min="0" max="10" />
+          <label>Retentativas <span class="cap-hint">máx. 3</span></label>
+          <input v-model.number="retryCount" type="number" min="0" max="3" />
         </div>
         <div class="adv-field">
-          <label>Delay entre tent. (ms)</label>
-          <input v-model.number="retryDelay" type="number" min="0" max="30000" />
+          <label>Delay entre tent. (ms) <span class="cap-hint">máx. 5s</span></label>
+          <input v-model.number="retryDelay" type="number" min="0" max="5000" />
         </div>
       </div>
       <div class="adv-toggle">
@@ -166,6 +166,7 @@ watch(
 .advanced summary { cursor: pointer; font-size: 12px; font-weight: 600; color: #555; }
 .adv-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
 .adv-field label { font-size: 11px; }
+.cap-hint { font-weight: 400; color: #888; font-size: 10px; }
 .adv-field input { width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; box-sizing: border-box; }
 .adv-toggle { margin-top: 8px; }
 .toggle-label { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }

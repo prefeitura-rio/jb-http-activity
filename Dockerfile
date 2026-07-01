@@ -1,18 +1,16 @@
-FROM node:20-alpine AS build
-RUN apk add --no-cache yarn=1.22.22-r1
+FROM node:24-alpine AS build
 WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci
 ARG VITE_BASE_PATH
 ENV VITE_BASE_PATH=$VITE_BASE_PATH
 COPY . .
-RUN yarn build
+RUN npm run build
 
-FROM node:20-alpine
-RUN apk add --no-cache yarn=1.22.22-r1
+FROM node:24-alpine
 WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --production && yarn cache clean
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 COPY server/ ./server/
 ARG SFMC_ACTIVITY_KEY

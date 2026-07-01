@@ -17,12 +17,25 @@ before(function(done) {
       return res.status(400).json({ error: 'inArguments ausente' })
     }
     const config = inArgs.reduce((acc, arg) => ({ ...acc, ...arg }), {})
-    const code = config._preview ? 200 : 500
-    res.status(code).json({
-      httpStatusCode: code,
-      httpSuccess: code < 300,
-      httpStatusClass: `${Math.floor(code / 100)}xx`,
-      ...(config._preview ? { _duration: 100, _timestamp: new Date().toISOString(), _url: config.url } : {})
+    res.status(200).json({
+      httpStatusCode: 200,
+      httpSuccess: true,
+      httpStatusClass: '2xx'
+    })
+  })
+  app.post('/preview', function(req, res) {
+    const inArgs = req.body && req.body.inArguments
+    if (!inArgs || !Array.isArray(inArgs) || !inArgs.length) {
+      return res.status(400).json({ error: 'inArguments ausente' })
+    }
+    const config = inArgs.reduce((acc, arg) => ({ ...acc, ...arg }), {})
+    res.status(200).json({
+      httpStatusCode: 200,
+      httpSuccess: true,
+      httpStatusClass: '2xx',
+      _duration: 100,
+      _timestamp: new Date().toISOString(),
+      _url: config.url
     })
   })
   server = app.listen(PORT, done)
@@ -53,8 +66,8 @@ describe('/execute - integracao', function() {
     assert.ok(res.error)
   })
 
-  it('POST /execute com _preview retorna metadados', async function() {
-    const res = await fetchJson(`${BASE_URL}/execute`, {
+  it('POST /preview retorna metadados', async function() {
+    const res = await fetchJson(`${BASE_URL}/preview`, {
       method: 'POST',
       body: {
         inArguments: [
@@ -64,7 +77,7 @@ describe('/execute - integracao', function() {
           { body: '' },
           { auth: '{"type":"none"}' },
           { responseMapping: '[]' },
-          { treatErrorsAsOutput: true, timeout: 5000, _preview: true }
+          { treatErrorsAsOutput: true, timeout: 5000 }
         ]
       }
     })

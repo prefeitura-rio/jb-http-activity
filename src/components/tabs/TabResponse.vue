@@ -159,16 +159,17 @@ async function executeTest() {
   testResponse.value = null
 
   try {
-    const res = await axios.post(`${import.meta.env.BASE_URL}execute`, {
+    const res = await axios.post(`${import.meta.env.BASE_URL}preview`, {
       inArguments: [
         { method: requestConfig.method },
         { url: requestConfig.url },
         { headers: requestConfig.headers },
         { queryParams: requestConfig.queryParams },
         { body: requestConfig.body },
+        { contentType: requestConfig.contentType },
         { auth: requestConfig.auth },
         { responseMapping: responseMapping.value },
-        { treatErrorsAsOutput: requestConfig.treatErrorsAsOutput, timeout: requestConfig.timeout, retryCount: requestConfig.retryCount, retryDelay: requestConfig.retryDelay, _preview: true }
+        { treatErrorsAsOutput: requestConfig.treatErrorsAsOutput, timeout: requestConfig.timeout, retryCount: requestConfig.retryCount, retryDelay: requestConfig.retryDelay }
       ]
     })
 
