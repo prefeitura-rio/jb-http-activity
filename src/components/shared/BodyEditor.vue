@@ -14,20 +14,23 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import VariablePicker from './VariablePicker.vue'
 
-const props = defineProps({
-  modelValue: { type: String, default: '' },
-  contentType: { type: String, default: 'application/json' },
-  schema: { type: Array, default: () => [] }
-})
+const props = defineProps<{
+  modelValue?: string
+  contentType?: string
+  schema?: unknown[]
+}>()
 
-const emit = defineEmits(['update:modelValue', 'update:contentType'])
+const emit = defineEmits<{
+  (e: 'update:modelValue', val: string): void
+  (e: 'update:contentType', val: string): void
+}>()
 
-const validationMsg = computed(() => {
-  if (props.contentType === 'application/json' && props.modelValue.trim()) {
+const validationMsg = computed<string>(() => {
+  if (props.contentType === 'application/json' && props.modelValue && props.modelValue.trim()) {
     try {
       JSON.parse(props.modelValue)
       return ''
@@ -38,16 +41,18 @@ const validationMsg = computed(() => {
   return ''
 })
 
-function onInput(e) {
-  emit('update:modelValue', e.target.value)
+function onInput(e: Event): void {
+  const target = e.target as HTMLTextAreaElement
+  emit('update:modelValue', target.value)
 }
 
-function onContentTypeChange(e) {
-  emit('update:contentType', e.target.value)
+function onContentTypeChange(e: Event): void {
+  const target = e.target as HTMLSelectElement
+  emit('update:contentType', target.value)
 }
 
-function onVariableInsert(varStr) {
-  emit('update:modelValue', props.modelValue + varStr)
+function onVariableInsert(varStr: string): void {
+  emit('update:modelValue', (props.modelValue || '') + varStr)
 }
 </script>
 

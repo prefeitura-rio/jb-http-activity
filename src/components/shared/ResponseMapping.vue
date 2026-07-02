@@ -27,28 +27,37 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 
-const props = defineProps({
-  modelValue: { type: Array, default: () => [] }
-})
+interface MappingRow {
+  expression: string
+  outputName: string
+  type: string
+}
 
-const emit = defineEmits(['update:modelValue', 'openFunctions'])
+const props = defineProps<{
+  modelValue?: MappingRow[]
+}>()
 
-const rows = ref([])
-let internalUpdate = false
+const emit = defineEmits<{
+  (e: 'update:modelValue', val: MappingRow[]): void
+  (e: 'openFunctions'): void
+}>()
+
+const rows = ref<MappingRow[]>([])
+let internalUpdate: boolean = false
 
 watch(
   () => props.modelValue,
-  (val) => {
+  (val: MappingRow[] | undefined) => {
     if (internalUpdate) {
       internalUpdate = false
       return
     }
 
     rows.value = Array.isArray(val)
-      ? val.map(r => ({
+      ? val.map((r: MappingRow) => ({
           expression: r.expression || '',
           outputName: r.outputName || '',
           type: r.type || 'text'
@@ -58,22 +67,22 @@ watch(
   { immediate: true, deep: true }
 )
 
-function addRow() {
+function addRow(): void {
   rows.value.push({ expression: '', outputName: '', type: 'text' })
   emitChange()
 }
 
-function removeRow(i) {
+function removeRow(i: number): void {
   rows.value.splice(i, 1)
   emitChange()
 }
 
-function emitChange() {
+function emitChange(): void {
   internalUpdate = true
 
   emit(
     'update:modelValue',
-    rows.value.map(r => ({
+    rows.value.map((r: MappingRow) => ({
       expression: r.expression || '',
       outputName: r.outputName || '',
       type: r.type || 'text'

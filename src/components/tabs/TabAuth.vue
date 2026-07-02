@@ -45,27 +45,27 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 import VariablePicker from '../shared/VariablePicker.vue'
 import axios from 'axios'
-import { requestConfig } from '../../store.js'
+import { requestConfig } from '../../store'
 
-const props = defineProps({
-  schema: { type: Array, default: () => [] }
-})
+const props = defineProps<{
+  schema?: unknown[]
+}>()
 
-const authType = ref('none')
-const bearerToken = ref('')
-const tokenUrl = ref('')
-const clientId = ref('')
-const clientSecret = ref('')
-const scope = ref('')
-const showSecret = ref(false)
-const testResult = ref('')
-const testOk = ref(false)
+const authType = ref<string>('none')
+const bearerToken = ref<string>('')
+const tokenUrl = ref<string>('')
+const clientId = ref<string>('')
+const clientSecret = ref<string>('')
+const scope = ref<string>('')
+const showSecret = ref<boolean>(false)
+const testResult = ref<string>('')
+const testOk = ref<boolean>(false)
 
-function syncAuth() {
+function syncAuth(): void {
   if (authType.value === 'none') {
     requestConfig.auth = { type: 'none' }
   } else if (authType.value === 'bearer') {

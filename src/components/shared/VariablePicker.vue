@@ -16,26 +16,28 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 
-const emit = defineEmits(['insert'])
+const emit = defineEmits<{
+  (e: 'insert', val: string): void
+}>()
 
-const props = defineProps({
-  schema: { type: Array, default: () => [] }
-})
+const props = defineProps<{
+  schema?: { key: string }[]
+}>()
 
-const selected = ref('')
-const contextVars = ['{{Context.IsTest}}', '{{Context.DefinitionId}}']
+const selected = ref<string>('')
+const contextVars: string[] = ['{{Context.IsTest}}', '{{Context.DefinitionId}}']
 
-const contactVars = computed(() => {
+const contactVars = computed<string[]>(() => {
   if (!props.schema || !props.schema.length) {
     return ['{{Contact.Key}}']
   }
-  return props.schema.map(s => '{{' + s.key + '}}')
+  return props.schema.map((s: { key: string }) => '{{' + s.key + '}}')
 })
 
-function insert() {
+function insert(): void {
   if (selected.value) {
     emit('insert', selected.value)
     selected.value = ''

@@ -77,42 +77,61 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import ResponseMapping from '../shared/ResponseMapping.vue'
 import FunctionHelperModal from '../shared/FunctionHelperModal.vue'
-import axios from 'axios'
-import { requestConfig } from '../../store.js'
+import axios, { AxiosResponse } from 'axios'
+import { requestConfig } from '../../store'
 
-const props = defineProps({
-  initialData: { type: Object, default: () => ({}) }
-})
+const props = defineProps<{
+  initialData?: Record<string, unknown>
+}>()
 
-const responseMapping = ref([])
-const showFunctions = ref(false)
-const testing = ref(false)
-const testResponse = ref(null)
-const testError = ref('')
+interface ResponseMappingRow {
+  expression?: string
+  outputName?: string
+  type?: string
+}
 
-function parseArray(value) {
-  if (Array.isArray(value)) return value
+interface TestResponseData {
+  isError: boolean
+  backendStatus: number
+  statusCode: number
+  statusText: string
+  url: string
+  duration: number
+  timestamp: string
+  attempts: number
+  body: string
+  mapped: Record<string, unknown>
+}
+
+const responseMapping = ref<ResponseMappingRow[]>([])
+const showFunctions = ref<boolean>(false)
+const testing = ref<boolean>(false)
+const testResponse = ref<TestResponseData | null>(null)
+const testError = ref<string>('')
+
+function parseArray(value: unknown): ResponseMappingRow[] {
+  if (Array.isArray(value)) return value as ResponseMappingRow[]
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value)
-      return Array.isArray(parsed) ? parsed : []
-    } catch (e) {
+      return Array.isArray(parsed) ? parsed as ResponseMappingRow[] : []
+    } catch {
       return []
     }
   }
   return []
 }
 
-function loadInitialData(data) {
+function loadInitialData(data: Record<string, unknown> | undefined): void {
   if (!data) return
   responseMapping.value = parseArray(data.responseMapping)
 }
 
-function getData() {
+function getData(): { responseMapping: ResponseMappingRow[] } {
   return {
     responseMapping: responseMapping.value || []
   }
@@ -122,29 +141,29 @@ defineExpose({ getData })
 
 watch(
   () => props.initialData,
-  (data) => {
+  (data: Record<string, unknown> | undefined) => {
     loadInitialData(data)
   },
   { deep: true, immediate: true }
 )
 
-const allVariables = computed(() => {
+const allVariables = computed<string[]>(() => {
   const builtins = ['{{Interaction.HTTP-1.httpStatusCode}}', '{{Interaction.HTTP-1.httpStatusClass}}', '{{Interaction.HTTP-1.httpSuccess}}']
-  const mapped = (responseMapping.value || []).filter(m => m.outputName).map(m => '{{Interaction.HTTP-1.' + m.outputName + '}}')
+  const mapped = (responseMapping.value || []).filter((m: ResponseMappingRow) => m.outputName).map((m: ResponseMappingRow) => '{{Interaction.HTTP-1.' + m.outputName + '}}')
   return [...builtins, ...mapped]
 })
 
-function formatTimestamp(ts) {
+function formatTimestamp(ts: unknown): string {
   if (!ts) return ''
   try {
-    return new Date(ts).toLocaleString('pt-BR')
+    return new Date(ts as string).toLocaleString('pt-BR')
   } catch {
-    return ts
+    return String(ts)
   }
 }
 
-function truncateUrl(url) {
-  if (!url) return '—'
+function truncateUrl(url: unknown): string {
+  if (!url || typeof url !== 'string') return '—'
   try {
     const u = new URL(url)
     return u.host + u.pathname
@@ -153,13 +172,13 @@ function truncateUrl(url) {
   }
 }
 
-async function executeTest() {
+async function executeTest(): Promise<void> {
   testing.value = true
   testError.value = ''
   testResponse.value = null
 
   try {
-    const res = await axios.post(`${import.meta.env.BASE_URL}preview`, {
+    const res: AxiosResponse<Record<string, unknown>> = await axios.post(`${import.meta.env.BASE_URL}preview`, {
       inArguments: [
         { method: requestConfig.method },
         { url: requestConfig.url },
@@ -173,30 +192,28 @@ async function executeTest() {
       ]
     })
 
-    const isError = res.data.httpStatusCode >= 400
-    const mapped = {}
+    const data = res.data
+    const isError: boolean = (data.httpStatusCode as number) >= 400
+    const mapped: Record<string, unknown> = {}
     for (const m of responseMapping.value) {
-      if (m.outputName) mapped[m.outputName] = res.data[m.outputName]
+      if (m.outputName) mapped[m.outputName] = data[m.outputName]
     }
 
     testResponse.value = {
       isError,
       backendStatus: res.status,
-      statusCode: res.data.httpStatusCode,
-      statusText: isError ? (res.data.httpStatusClass || 'Error') : 'OK',
-      url: truncateUrl(res.data._url || requestConfig.url),
-      duration: res.data._duration || 0,
-      timestamp: formatTimestamp(res.data._timestamp),
-      attempts: res.data._attempts || 1,
-      body: res.data._rawBody ? (typeof res.data._rawBody === 'string' ? res.data._rawBody : JSON.stringify(res.data._rawBody, null, 2)) : '',
-      mapped: { ...mapped, httpStatusCode: res.data.httpStatusCode, httpSuccess: res.data.httpSuccess }
+      statusCode: data.httpStatusCode as number,
+      statusText: isError ? ((data.httpStatusClass as string) || 'Error') : 'OK',
+      url: truncateUrl(data._url || requestConfig.url),
+      duration: (data._duration as number) || 0,
+      timestamp: formatTimestamp(data._timestamp),
+      attempts: (data._attempts as number) || 1,
+      body: data._rawBody ? (typeof data._rawBody === 'string' ? data._rawBody : JSON.stringify(data._rawBody, null, 2)) : '',
+      mapped: { ...mapped, httpStatusCode: data.httpStatusCode, httpSuccess: data.httpSuccess }
     }
-  } catch (err) {
-    const errorData = err.response?.data
-    testError.value = {
-      backendStatus: err.response?.status,
-      statusCode: errorData?.httpStatusCode || err.response?.status || '—',
-      statusText: errorData?.httpStatusClass || 'Falha',
+  } catch (err: unknown) {
+    const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown> } }
+    const errorData = axiosErr.response?.data
       url: truncateUrl(requestConfig.url),
       duration: errorData?._duration || 0,
       attempts: errorData?._attempts || 1,

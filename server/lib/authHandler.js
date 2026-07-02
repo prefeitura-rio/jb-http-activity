@@ -1,38 +1,44 @@
-const axios = require('axios')
-const { validateUrl } = require('./blocklist')
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.resolveAuth = resolveAuth;
+const axios_1 = __importDefault(require("axios"));
+const blocklist_1 = require("./blocklist");
+const types_1 = require("../types");
 async function resolveAuth(authConfig) {
-  if (!authConfig || authConfig.type === 'none') {
-    return {}
-  }
-
-  if (authConfig.type === 'bearer') {
-    if (!authConfig.token) return {}
-    return { Authorization: `Bearer ${authConfig.token}` }
-  }
-
-  if (authConfig.type === 'oauth2_client_credentials') {
-    const { tokenUrl, clientId, clientSecret, scope } = authConfig
-    if (!tokenUrl || !clientId || !clientSecret) return {}
-
-    const validation = await validateUrl(tokenUrl)
-    if (!validation.valid) {
-      throw new Error(`tokenUrl bloqueada: ${validation.error}`)
+    if (!(0, types_1.isAuthConfig)(authConfig))
+        return {};
+    if ((0, types_1.isNoneAuth)(authConfig)) {
+        return {};
     }
-
-    const response = await axios.post(tokenUrl, null, {
-      params: {
-        grant_type: 'client_credentials',
-        client_id: clientId,
-        client_secret: clientSecret,
-        ...(scope ? { scope } : {})
-      }
-    })
-
-    return { Authorization: `Bearer ${response.data.access_token}` }
-  }
-
-  return {}
+    if ((0, types_1.isBearerAuth)(authConfig)) {
+        if (!authConfig.token)
+            return {};
+        return { Authorization: `Bearer ${authConfig.token}` };
+    }
+    if ((0, types_1.isOAuth2Auth)(authConfig)) {
+        const { tokenUrl, clientId, clientSecret, scope } = authConfig;
+        if (!tokenUrl || !clientId || !clientSecret)
+            return {};
+        const validation = await (0, blocklist_1.validateUrl)(tokenUrl);
+        if (!validation.valid) {
+            const errorMsg = validation.error;
+            throw new Error(`tokenUrl bloqueada: ${errorMsg}`);
+        }
+        const params = {
+            grant_type: 'client_credentials',
+            client_id: clientId,
+            client_secret: clientSecret
+        };
+        if (scope) {
+            params.scope = scope;
+        }
+        const response = await axios_1.default.post(tokenUrl, null, {
+            params
+        });
+        return { Authorization: `Bearer ${response.data.access_token}` };
+    }
+    return {};
 }
-
-module.exports = { resolveAuth }

@@ -9,17 +9,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 
-const name = ref('')
-const saved = ref(false)
-let debounceTimer = null
+const name = ref<string>('')
+const saved = ref<boolean>(false)
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-function setName(val) { name.value = val }
-function getName() { return name.value }
+function setName(val: string): void { name.value = val }
+function getName(): string { return name.value }
 
-function onInput() {
+function onInput(): void {
   saved.value = false
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {

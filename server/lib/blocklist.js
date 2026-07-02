@@ -1,69 +1,68 @@
-const dns = require('dns').promises
-const net = require('net')
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.validateUrl = validateUrl;
+const dns_1 = __importDefault(require("dns"));
+const net_1 = __importDefault(require("net"));
 const BLOCKED_RANGES = [
-  { name: 'loopback', test: (ip) => ip === '127.0.0.1' || ip === '0.0.0.0' || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip) || /^0\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip) },
-  { name: 'private-10', test: (ip) => /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip) },
-  { name: 'private-172', test: (ip) => /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(ip) },
-  { name: 'private-192', test: (ip) => /^192\.168\.\d{1,3}\.\d{1,3}$/.test(ip) },
-  { name: 'link-local', test: (ip) => /^169\.254\.\d{1,3}\.\d{1,3}$/.test(ip) },
-  { name: 'ipv6-loopback', test: (ip) => ip === '::1' || ip === '0:0:0:0:0:0:0:1' },
-  { name: 'ipv6-unique-local', test: (ip) => /^fc00:/i.test(ip) || /^fd00:/i.test(ip) || /^fc/i.test(ip) },
-  { name: 'ipv6-link-local', test: (ip) => /^fe80:/i.test(ip) }
-]
-
+    { name: 'loopback', test: (ip) => ip === '127.0.0.1' || ip === '0.0.0.0' || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip) || /^0\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip) },
+    { name: 'private-10', test: (ip) => /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip) },
+    { name: 'private-172', test: (ip) => /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(ip) },
+    { name: 'private-192', test: (ip) => /^192\.168\.\d{1,3}\.\d{1,3}$/.test(ip) },
+    { name: 'link-local', test: (ip) => /^169\.254\.\d{1,3}\.\d{1,3}$/.test(ip) },
+    { name: 'ipv6-loopback', test: (ip) => ip === '::1' || ip === '0:0:0:0:0:0:0:1' },
+    { name: 'ipv6-unique-local', test: (ip) => /^fc00:/i.test(ip) || /^fd00:/i.test(ip) || /^fc/i.test(ip) },
+    { name: 'ipv6-link-local', test: (ip) => /^fe80:/i.test(ip) }
+];
 const BLOCKED_NAMES = [
-  'localhost',
-  'metadata',
-  'metadata.google.internal',
-  'metadata.google.internal.',
-  'kubernetes.default',
-  'kubernetes.default.svc'
-]
-
+    'localhost',
+    'metadata',
+    'metadata.google.internal',
+    'metadata.google.internal.',
+    'kubernetes.default',
+    'kubernetes.default.svc'
+];
 async function validateUrl(urlString) {
-  let url
-  try {
-    url = new URL(urlString)
-  } catch {
-    return { valid: false, error: 'URL invalida' }
-  }
-
-  if (!['http:', 'https:'].includes(url.protocol)) {
-    return { valid: false, error: 'Protocolo nao suportado' }
-  }
-
-  const hostname = url.hostname.toLowerCase()
-
-  if (BLOCKED_NAMES.includes(hostname)) {
-    return { valid: false, error: `Hostname bloqueado: ${hostname}` }
-  }
-
-  let ip
-
-  if (net.isIP(hostname)) {
-    ip = hostname
-  } else {
+    let url;
     try {
-      const resolved = await dns.resolve4(hostname)
-      ip = resolved[0]
-    } catch {
-      try {
-        const resolved6 = await dns.resolve6(hostname)
-        ip = resolved6[0]
-      } catch {
-        return { valid: false, error: `Nao foi possivel resolver DNS: ${hostname}` }
-      }
+        url = new URL(urlString);
     }
-  }
-
-  for (const range of BLOCKED_RANGES) {
-    if (range.test(ip)) {
-      return { valid: false, error: `IP bloqueado (${range.name}): ${ip}` }
+    catch {
+        return { valid: false, error: 'URL invalida' };
     }
-  }
-
-  return { valid: true }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return { valid: false, error: 'Protocolo nao suportado' };
+    }
+    const hostname = url.hostname.toLowerCase();
+    if (BLOCKED_NAMES.includes(hostname)) {
+        return { valid: false, error: `Hostname bloqueado: ${hostname}` };
+    }
+    let ip;
+    if (net_1.default.isIP(hostname) !== 0) {
+        ip = hostname;
+    }
+    else {
+        const dnsPromises = dns_1.default.promises;
+        try {
+            const resolved = await dnsPromises.resolve4(hostname);
+            ip = resolved[0];
+        }
+        catch {
+            try {
+                const resolved6 = await dnsPromises.resolve6(hostname);
+                ip = resolved6[0];
+            }
+            catch {
+                return { valid: false, error: `Nao foi possivel resolver DNS: ${hostname}` };
+            }
+        }
+    }
+    for (const range of BLOCKED_RANGES) {
+        if (range.test(ip)) {
+            return { valid: false, error: `IP bloqueado (${range.name}): ${ip}` };
+        }
+    }
+    return { valid: true };
 }
-
-module.exports = { validateUrl }
