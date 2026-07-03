@@ -8,6 +8,7 @@ dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const jwtVerify_1 = __importDefault(require("./middleware/jwtVerify"));
+const lifecycleMiddleware_1 = __importDefault(require("./middleware/lifecycleMiddleware"));
 const execute_1 = __importDefault(require("./routes/execute"));
 const validate_1 = __importDefault(require("./routes/validate"));
 const publish_1 = __importDefault(require("./routes/publish"));
@@ -59,17 +60,17 @@ if (isSubPath) {
     });
 }
 app.post('/execute', jwtVerify_1.default, execute_1.default);
-app.post('/validate', jwtVerify_1.default, validate_1.default);
-app.post('/publish', jwtVerify_1.default, publish_1.default);
-app.post('/save', jwtVerify_1.default, save_1.default);
-app.post('/stop', jwtVerify_1.default, stop_1.default);
+app.post('/validate', lifecycleMiddleware_1.default, validate_1.default);
+app.post('/publish', lifecycleMiddleware_1.default, publish_1.default);
+app.post('/save', lifecycleMiddleware_1.default, save_1.default);
+app.post('/stop', lifecycleMiddleware_1.default, stop_1.default);
 app.post('/preview', preview_1.default);
 if (isSubPath) {
     app.post(`${uiBasePath}/execute`, jwtVerify_1.default, execute_1.default);
-    app.post(`${uiBasePath}/validate`, jwtVerify_1.default, validate_1.default);
-    app.post(`${uiBasePath}/publish`, jwtVerify_1.default, publish_1.default);
-    app.post(`${uiBasePath}/save`, jwtVerify_1.default, save_1.default);
-    app.post(`${uiBasePath}/stop`, jwtVerify_1.default, stop_1.default);
+    app.post(`${uiBasePath}/validate`, lifecycleMiddleware_1.default, validate_1.default);
+    app.post(`${uiBasePath}/publish`, lifecycleMiddleware_1.default, publish_1.default);
+    app.post(`${uiBasePath}/save`, lifecycleMiddleware_1.default, save_1.default);
+    app.post(`${uiBasePath}/stop`, lifecycleMiddleware_1.default, stop_1.default);
     app.post(`${uiBasePath}/preview`, preview_1.default);
 }
 const configJsPath = isSubPath ? `${uiBasePath}/config.js` : '/config.js';

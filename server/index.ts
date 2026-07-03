@@ -4,6 +4,7 @@ dotenv.config()
 import express, { Request, Response, NextFunction } from 'express'
 import path from 'path'
 import jwtVerify from './middleware/jwtVerify'
+import lifecycleMiddleware from './middleware/lifecycleMiddleware'
 import executeRoute from './routes/execute'
 import validateRoute from './routes/validate'
 import publishRoute from './routes/publish'
@@ -68,17 +69,17 @@ if (isSubPath) {
 }
 
 app.post('/execute', jwtVerify, executeRoute)
-app.post('/validate', jwtVerify, validateRoute)
-app.post('/publish', jwtVerify, publishRoute)
-app.post('/save', jwtVerify, saveRoute)
-app.post('/stop', jwtVerify, stopRoute)
+app.post('/validate', lifecycleMiddleware, validateRoute)
+app.post('/publish', lifecycleMiddleware, publishRoute)
+app.post('/save', lifecycleMiddleware, saveRoute)
+app.post('/stop', lifecycleMiddleware, stopRoute)
 app.post('/preview', previewRoute)
 if (isSubPath) {
   app.post(`${uiBasePath}/execute`, jwtVerify, executeRoute)
-  app.post(`${uiBasePath}/validate`, jwtVerify, validateRoute)
-  app.post(`${uiBasePath}/publish`, jwtVerify, publishRoute)
-  app.post(`${uiBasePath}/save`, jwtVerify, saveRoute)
-  app.post(`${uiBasePath}/stop`, jwtVerify, stopRoute)
+  app.post(`${uiBasePath}/validate`, lifecycleMiddleware, validateRoute)
+  app.post(`${uiBasePath}/publish`, lifecycleMiddleware, publishRoute)
+  app.post(`${uiBasePath}/save`, lifecycleMiddleware, saveRoute)
+  app.post(`${uiBasePath}/stop`, lifecycleMiddleware, stopRoute)
   app.post(`${uiBasePath}/preview`, previewRoute)
 }
 

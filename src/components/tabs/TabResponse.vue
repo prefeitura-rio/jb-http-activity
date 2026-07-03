@@ -212,13 +212,21 @@ async function executeTest(): Promise<void> {
       mapped: { ...mapped, httpStatusCode: data.httpStatusCode, httpSuccess: data.httpSuccess }
     }
   } catch (err: unknown) {
-    const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown> } }
+    const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown> }; message?: string }
     const errorData = axiosErr.response?.data
+    const statusCode = (errorData?.httpStatusCode as number) || axiosErr.response?.status || 0
+    const statusText = (errorData?.httpStatusClass as string) || 'Falha'
+    testError.value = {
+      backendStatus: axiosErr.response?.status || 0,
+      statusCode,
+      statusText,
       url: truncateUrl(requestConfig.url),
-      duration: errorData?._duration || 0,
-      attempts: errorData?._attempts || 1,
+      duration: (errorData?._duration as number) || 0,
+      attempts: (errorData?._attempts as number) || 1,
       timestamp: formatTimestamp(errorData?._timestamp),
-      message: err.response?.data?.error || err.message || 'Erro de conexao'
+      message: typeof axiosErr.response?.data === 'object' && axiosErr.response?.data
+        ? ((axiosErr.response.data as Record<string, unknown>).error as string) || axiosErr.message || 'Erro de conexao'
+        : axiosErr.message || 'Erro de conexao'
     }
   } finally {
     testing.value = false

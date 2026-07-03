@@ -17,6 +17,9 @@ Journey Builder lacks a native node for making arbitrary HTTP calls to external 
 - Toggle "Treat HTTP errors as output" — 4xx/5xx can be routed via native Decision Split
 - Content-Type dropdown: `application/json`, `form-urlencoded`, `multipart/form-data`
 - Test button with response preview
+- SSRF protection: private IP ranges blocked via DNS resolution
+- `/preview` endpoint separated from `/execute` with its own safeguards
+- Resource caps: timeout (40s), retry (3x), delay (5s)
 - Logs via BigQuery streaming insert (`rj-crm-registry.jb_http_activity.logs`)
 
 ## Architecture
@@ -29,9 +32,10 @@ GKE (cluster application - us-central1)
        │
        ├── Express server + JWT verify
        ├── httpClient (Axios) → external APIs
-       ├── expressionParser (transform functions)
-       ├── responseMapper (dot notation + expressions)
-       └── bigQueryLogger (streaming insert)
+ ├── expressionParser (transform functions)
+ ├── responseMapper (dot notation + expressions)
+ ├── blocklist (SSRF protection)
+ └── bigQueryLogger (streaming insert)
        │
        ▼
 BigQuery (rj-crm-registry.jb_http_activity.logs)
@@ -41,7 +45,7 @@ BigQuery (rj-crm-registry.jb_http_activity.logs)
 
 | Layer | Technology |
 |---|---|
-| Backend | Node.js 20 + Express |
+| Backend | Node.js 24 + Express + TypeScript |
 | Frontend | Vue.js 3 + Vite |
 | HTTP | Axios |
 | iframe↔JB | Postmonger |
