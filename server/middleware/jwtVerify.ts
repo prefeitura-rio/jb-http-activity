@@ -3,16 +3,6 @@ import { Request, Response, NextFunction } from 'express'
 import { JwtPayload, isJwtPayload } from '../types'
 
 export default function jwtVerify(req: Request, res: Response, next: NextFunction): void {
-  if (process.env.JWT_DISABLED === 'true') {
-    if (process.env.NODE_ENV === 'production') {
-      res.status(500).json({ error: 'JWT_DISABLED nao permitido em producao' })
-      return
-    }
-    console.warn('[WARN] JWT_DISABLED ativo')
-    next()
-    return
-  }
-
   if (req.headers['content-type'] !== 'application/jwt') {
     res.status(400).json({ error: 'Content-Type deve ser application/jwt' })
     return

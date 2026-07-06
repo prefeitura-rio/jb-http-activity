@@ -8,16 +8,6 @@ export default function lifecycleMiddleware(req: Request, res: Response, next: N
     return
   }
 
-  if (process.env.JWT_DISABLED === 'true') {
-    if (process.env.NODE_ENV === 'production') {
-      res.status(500).json({ error: 'JWT_DISABLED nao permitido em producao' })
-      return
-    }
-    console.warn('[WARN] JWT_DISABLED ativo')
-    next()
-    return
-  }
-
   // application/jwt: decodifica JWT e popula req.body
   if (req.headers['content-type'] === 'application/jwt' && Buffer.isBuffer(req.body) && req.body.length > 0) {
     try {
