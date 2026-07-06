@@ -59,10 +59,6 @@
         <div class="allowlist-header">🔒 URL não liberada</div>
         <div class="allowlist-domain">{{ testError.blockedDomain }}</div>
         <div class="allowlist-msg">{{ testError.message }}</div>
-        <div class="allowlist-fix">
-          <span class="fix-label">Como resolver:</span>
-          {{ testError.howToFix }}
-        </div>
       </div>
       <div v-else-if="testError" class="test-error">
         <div class="error-header-bar">
@@ -223,19 +219,28 @@ async function executeTest(): Promise<void> {
   } catch (err: unknown) {
     const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown> }; message?: string }
     const errorData = axiosErr.response?.data
-    const statusCode = (errorData?.httpStatusCode as number) || axiosErr.response?.status || 0
-    const statusText = (errorData?.httpStatusClass as string) || 'Falha'
-    testError.value = {
-      backendStatus: axiosErr.response?.status || 0,
-      statusCode,
-      statusText,
-      url: truncateUrl(requestConfig.url),
-      duration: (errorData?._duration as number) || 0,
-      attempts: (errorData?._attempts as number) || 1,
-      timestamp: formatTimestamp(errorData?._timestamp),
-      message: typeof axiosErr.response?.data === 'object' && axiosErr.response?.data
-        ? ((axiosErr.response.data as Record<string, unknown>).error as string) || axiosErr.message || 'Erro de conexao'
-        : axiosErr.message || 'Erro de conexao'
+
+    // ALLOWLIST: resposta amigavel
+    if (errorData && (errorData.error as string) === 'URL nao liberada') {
+      testError.value = {
+        ...errorData,
+        backendStatus: axiosErr.response?.status || 403
+      } as unknown as string
+    } else {
+      const statusCode = (errorData?.httpStatusCode as number) || axiosErr.response?.status || 0
+      const statusText = (errorData?.httpStatusClass as string) || 'Falha'
+      testError.value = {
+        backendStatus: axiosErr.response?.status || 0,
+        statusCode,
+        statusText,
+        url: truncateUrl(requestConfig.url),
+        duration: (errorData?._duration as number) || 0,
+        attempts: (errorData?._attempts as number) || 1,
+        timestamp: formatTimestamp(errorData?._timestamp),
+        message: typeof axiosErr.response?.data === 'object' && axiosErr.response?.data
+          ? ((axiosErr.response.data as Record<string, unknown>).error as string) || axiosErr.message || 'Erro de conexao'
+          : axiosErr.message || 'Erro de conexao'
+      } as unknown as string
     }
   } finally {
     testing.value = false
