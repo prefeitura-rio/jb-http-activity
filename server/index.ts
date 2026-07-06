@@ -51,12 +51,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next()
 })
 
-app.use(express.static(path.join(__dirname, '..', 'dist')))
-app.use(express.static(path.join(__dirname, '..', 'public')))
+app.use(express.static(path.resolve(__dirname, '..', '..', 'dist')))
+app.use(express.static(path.resolve(__dirname, '..', '..', 'public')))
 
 if (isSubPath) {
-  app.use(uiBasePath, express.static(path.join(__dirname, '..', 'dist')))
-  app.use(uiBasePath, express.static(path.join(__dirname, '..', 'public')))
+  app.use(uiBasePath, express.static(path.resolve(__dirname, '..', '..', 'dist')))
+  app.use(uiBasePath, express.static(path.resolve(__dirname, '..', '..', 'public')))
 }
 
 app.get('/health', (req: Request, res: Response) => {

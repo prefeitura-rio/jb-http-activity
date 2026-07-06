@@ -3,6 +3,13 @@ import axios from 'axios'
 import { resolveAuth } from '../server/lib/authHandler'
 
 describe('authHandler', function() {
+  before(function() {
+    process.env.HTTP_ALLOWLIST = '.exemplo.com'
+  })
+
+  after(function() {
+    delete process.env.HTTP_ALLOWLIST
+  })
   describe('None', function() {
     it('retorna objeto vazio se type for none', async function() {
       const result = await resolveAuth({ type: 'none' })

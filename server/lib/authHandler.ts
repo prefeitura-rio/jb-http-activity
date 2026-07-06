@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { validateUrl } from './blocklist'
+import { validateUrl } from './allowlist'
 import { isAuthConfig, isNoneAuth, isBearerAuth, isOAuth2Auth } from '../types'
 
 export async function resolveAuth(authConfig: unknown): Promise<Record<string, string>> {

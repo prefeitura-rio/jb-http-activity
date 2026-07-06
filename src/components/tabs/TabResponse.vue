@@ -55,7 +55,16 @@
           <div v-for="(val, key) in testResponse.mapped" :key="key" class="mapped-result" :class="mappedClass(val)" v-text="mappedText(key, val)"></div>
         </div>
       </div>
-      <div v-if="testError" class="test-error">
+      <div v-if="testError && testError.error === 'URL nao liberada'" class="allowlist-block">
+        <div class="allowlist-header">🔒 URL não liberada</div>
+        <div class="allowlist-domain">{{ testError.blockedDomain }}</div>
+        <div class="allowlist-msg">{{ testError.message }}</div>
+        <div class="allowlist-fix">
+          <span class="fix-label">Como resolver:</span>
+          {{ testError.howToFix }}
+        </div>
+      </div>
+      <div v-else-if="testError" class="test-error">
         <div class="error-header-bar">
           <span class="error-badge-large">{{ testError.statusCode || '—' }} {{ testError.statusText || 'Erro' }}</span>
           <span class="backend-label" v-if="testError.backendStatus">  Backend: </span>
@@ -292,4 +301,10 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .meta-timestamp { color: #888; white-space: nowrap; }
 .response-body pre { font-size: 11px; font-family: monospace; background: #fff; border: 1px solid #eee; border-radius: 3px; padding: 6px; overflow-x: auto; margin: 4px 0; }
 .response-mappings { margin-top: 4px; }
+.allowlist-block { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; margin-top: 8px; }
+.allowlist-header { font-size: 14px; font-weight: 700; color: #856404; margin-bottom: 6px; }
+.allowlist-domain { font-family: monospace; font-size: 13px; color: #721c24; background: #fff; border: 1px solid #ffc107; border-radius: 3px; padding: 4px 6px; margin-bottom: 8px; word-break: break-all; }
+.allowlist-msg { font-size: 12px; color: #555; margin-bottom: 8px; }
+.allowlist-fix { font-size: 12px; color: #555; background: #fef9e7; border-radius: 3px; padding: 8px; }
+.fix-label { font-weight: 600; color: #856404; }
 </style>

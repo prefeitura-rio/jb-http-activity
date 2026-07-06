@@ -120,6 +120,37 @@ export default async function previewRoute(req: Request, res: Response): Promise
 
     res.status(200).json(outArgs)
   } catch (err: unknown) {
+    const errMessage: string = err instanceof Error ? err.message : 'Erro desconhecido'
+
+    // ALLOWLIST: resposta amigavel com instrucao de correcao
+    if (errMessage.includes('ALLOWLIST:')) {
+      const blockedDomain: string = errMessage.split('ALLOWLIST:')[1]?.trim() || 'desconhecido'
+      const outArgs: Record<string, unknown> = {
+        _duration: 0,
+        _timestamp: new Date().toISOString(),
+        _url: config ? (typeof config.url === 'string' ? config.url : 'unknown') : 'unknown',
+        _attempts: 1,
+        httpStatusCode: 0,
+        httpStatusClass: '0xx',
+        httpSuccess: false
+      }
+
+      console.log('[PREVIEW]', JSON.stringify({
+        method: config ? (typeof config.method === 'string' ? config.method : 'unknown') : 'unknown',
+        url: config ? (typeof config.url === 'string' ? config.url : 'unknown') : 'unknown',
+        httpStatus: 0,
+        error: `ALLOWLIST: ${blockedDomain}`
+      }))
+
+      res.status(403).json({
+        error: 'URL nao liberada',
+        blockedDomain,
+        message: `O dominio "${blockedDomain}" nao esta na lista de endpoints permitidos.`,
+        howToFix: 'Adicione o dominio na variavel HTTP_ALLOWLIST no Infisical e reinicie o servico.'
+      })
+      return
+    }
+
     const outArgs: Record<string, unknown> = {
       _duration: 0,
       _timestamp: new Date().toISOString(),
@@ -134,11 +165,11 @@ export default async function previewRoute(req: Request, res: Response): Promise
       method: config ? (typeof config.method === 'string' ? config.method : 'unknown') : 'unknown',
       url: config ? (typeof config.url === 'string' ? config.url : 'unknown') : 'unknown',
       httpStatus: 0,
-      error: err instanceof Error ? err.message : 'Erro desconhecido'
+      error: errMessage
     }))
 
     const errorResponse: Record<string, unknown> = {
-      error: err instanceof Error ? err.message : 'Erro interno do servidor',
+      error: errMessage,
       ...outArgs
     }
 

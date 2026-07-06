@@ -14,7 +14,7 @@
     "resolveJsonModule": true,
     "declaration": false,
     "sourceMap": false,
-    "outDir": ".",
+    "outDir": "./build",
     "rootDir": ".",
     "types": ["node", "mocha"]
   },

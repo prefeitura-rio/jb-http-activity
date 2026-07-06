@@ -6,13 +6,14 @@ ARG VITE_BASE_PATH
 ENV VITE_BASE_PATH=$VITE_BASE_PATH
 COPY . .
 RUN npm run build
+RUN npx tsc
 
 FROM node:24-alpine
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
-COPY server/ ./server/
+COPY --from=build /app/build ./build
 ARG SFMC_ACTIVITY_KEY
 ARG SFMC_ACTIVITY_NAME
 ARG SFMC_BASE_URL
@@ -32,4 +33,4 @@ RUN if [ -n "$SFMC_ACTIVITY_KEY" ]; then \
 EXPOSE 8080
 ENV PORT=8080
 USER node
-CMD ["node", "server/index.js"]
+CMD ["node", "build/server/index.js"]

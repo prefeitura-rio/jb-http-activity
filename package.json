@@ -4,8 +4,8 @@
   "private": true,
   "description": "Custom Activity genérica para chamadas HTTP no Journey Builder do Salesforce Marketing Cloud",
   "scripts": {
-    "start": "npm run build && npx tsc && node server/index.js",
-    "dev:server": "node --watch server/index.js",
+    "start": "npm run build && npx tsc && node build/server/index.js",
+    "dev:server": "npx tsx watch server/index.ts",
     "dev:client": "vite",
     "build": "vite build",
     "test": "mocha --require ts-node/register test/**/*.test.ts --timeout 30000",
@@ -33,6 +33,7 @@
     "@vitejs/plugin-vue": "^5.0.0",
     "mocha": "^10.4.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.0",
     "typescript": "^6.0.3",
     "vite": "^5.4.0",
     "vue-tsc": "^3.3.6"

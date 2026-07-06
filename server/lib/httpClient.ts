@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
-import { validateUrl } from './blocklist'
+import { validateUrl } from './allowlist'
 import { HttpRequestConfig, HttpResponse } from '../types'
 
 export function shouldRetry(attempt: number, retryCount: number, response: AxiosResponse | null): boolean {
