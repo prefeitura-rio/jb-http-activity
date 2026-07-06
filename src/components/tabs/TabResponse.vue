@@ -310,6 +310,5 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .allowlist-header { font-size: 14px; font-weight: 700; color: #856404; margin-bottom: 6px; }
 .allowlist-domain { font-family: monospace; font-size: 13px; color: #721c24; background: #fff; border: 1px solid #ffc107; border-radius: 3px; padding: 4px 6px; margin-bottom: 8px; word-break: break-all; }
 .allowlist-msg { font-size: 12px; color: #555; margin-bottom: 8px; }
-.allowlist-fix { font-size: 12px; color: #555; background: #fef9e7; border-radius: 3px; padding: 8px; }
-.fix-label { font-weight: 600; color: #856404; }
+
 </style>
