@@ -22,6 +22,8 @@ coverage/
 
 # Local-only docs
 AGENTS.md
+chamado-salesforce.md
+plano-correcao-bloqueadores.md
 
 # Playwright MCP artifacts
 .playwright-mcp/
