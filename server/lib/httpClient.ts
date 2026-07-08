@@ -26,6 +26,7 @@ export async function request(config: HttpRequestConfig): Promise<HttpResponse> 
     headers: (headers || {}) as Record<string, string>,
     params: queryParams || {},
     timeout: Math.min(config.timeout || 30000, 40000),
+    maxRedirects: 0,
     validateStatus: () => true
   }
 

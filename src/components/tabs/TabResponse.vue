@@ -31,6 +31,10 @@
 
     <div class="test-section">
       <h4>Testar requisição</h4>
+      <div class="jwt-field">
+        <label>Token de autenticação</label>
+        <input v-model="jwtToken" type="password" placeholder="Cole o JWT de autenticação" class="jwt-input" />
+      </div>
       <button class="btn-exec" @click="executeTest" :disabled="testing">
         {{ testing ? 'Executando...' : 'Executar com dados de teste' }}
       </button>
@@ -112,6 +116,7 @@ interface TestResponseData {
   mapped: Record<string, unknown>
 }
 
+const jwtToken = ref<string>('')
 const responseMapping = ref<ResponseMappingRow[]>([])
 const showFunctions = ref<boolean>(false)
 const testing = ref<boolean>(false)
@@ -183,6 +188,11 @@ async function executeTest(): Promise<void> {
   testResponse.value = null
 
   try {
+    const axiosHeaders: Record<string, string> = {}
+    if (jwtToken.value) {
+      axiosHeaders['Authorization'] = `Bearer ${jwtToken.value}`
+    }
+
     const res: AxiosResponse<Record<string, unknown>> = await axios.post(`${import.meta.env.BASE_URL}preview`, {
       inArguments: [
         { method: requestConfig.method },
@@ -195,7 +205,7 @@ async function executeTest(): Promise<void> {
         { responseMapping: responseMapping.value },
         { treatErrorsAsOutput: requestConfig.treatErrorsAsOutput, timeout: requestConfig.timeout, retryCount: requestConfig.retryCount, retryDelay: requestConfig.retryDelay }
       ]
-    })
+    }, { headers: axiosHeaders })
 
     const data = res.data
     const isError: boolean = (data.httpStatusCode as number) >= 400
@@ -273,6 +283,9 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .vars-list { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; }
 .vars-list code { font-size: 12px; font-family: monospace; color: #0070d2; }
 .btn-copy { background: #28a745; color: #fff; border: none; border-radius: 3px; padding: 5px 10px; cursor: pointer; font-size: 12px; }
+.jwt-field { margin-bottom: 8px; }
+.jwt-field label { display: block; font-size: 12px; font-weight: 600; color: #444; margin-bottom: 3px; }
+.jwt-input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; box-sizing: border-box; font-family: monospace; }
 .btn-exec { background: #0070d2; color: #fff; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; font-size: 13px; }
 .btn-exec:disabled { background: #999; cursor: not-allowed; }
 .test-response { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 8px; margin-top: 8px; }
