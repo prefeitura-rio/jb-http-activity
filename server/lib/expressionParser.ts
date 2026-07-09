@@ -1,44 +1,46 @@
-function getByDotNotation(path, obj) {
+import { LiteralValue, isLiteralValue } from '../types'
+
+export function getByDotNotation(path: string, obj: unknown): unknown {
   if (!path || !obj) return null
-  const keys = path.split('.')
-  let current = obj
+  const keys: string[] = path.split('.')
+  let current: unknown = obj
   for (const key of keys) {
-    if (current == null) return null
-    current = current[key]
+    if (current == null || typeof current !== 'object') return null
+    current = (current as Record<string, unknown>)[key]
   }
   return current
 }
 
-function parseLiteral(value) {
+function parseLiteral(value: string): LiteralValue {
   if (value === 'true') return true
   if (value === 'false') return false
   if (value === 'null') return null
   if (value === 'undefined') return undefined
   if (/^-?\d+\.?\d*$/.test(value)) return Number(value)
-  const singleMatch = value.match(/^'(.*)'$/)
+  const singleMatch: RegExpMatchArray | null = value.match(/^'(.*)'$/)
   if (singleMatch) return singleMatch[1]
-  const doubleMatch = value.match(/^"(.*)"$/)
+  const doubleMatch: RegExpMatchArray | null = value.match(/^"(.*)"$/)
   if (doubleMatch) return doubleMatch[1]
   return value
 }
 
-function isDotNotation(str) {
+function isDotNotation(str: string): boolean {
   return /^[a-zA-Z_$][a-zA-Z0-9_.$]*$/.test(str) && str.includes('.')
 }
 
-function isSimplePath(str) {
+function isSimplePath(str: string): boolean {
   return /^[a-zA-Z_$][a-zA-Z0-9_.$]*$/.test(str)
 }
 
-function parseArguments(raw) {
-  const args = []
-  let current = ''
-  let depth = 0
-  let inSingle = false
-  let inDouble = false
+function parseArguments(raw: string): string[] {
+  const args: string[] = []
+  let current: string = ''
+  let depth: number = 0
+  let inSingle: boolean = false
+  let inDouble: boolean = false
 
   for (let i = 0; i < raw.length; i++) {
-    const ch = raw[i]
+    const ch: string = raw[i]
 
     if (inSingle) {
       if (ch === "'") inSingle = false
@@ -92,77 +94,81 @@ function parseArguments(raw) {
   return args
 }
 
-const TRANSFORM_FUNCTIONS = {
-  upper: (v) => {
+type TransformFn = (...args: unknown[]) => LiteralValue
+
+const TRANSFORM_FUNCTIONS: Record<string, TransformFn> = {
+  upper: (v: unknown): LiteralValue => {
     if (v == null) return null
     return String(v).toUpperCase()
   },
-  lower: (v) => {
+  lower: (v: unknown): LiteralValue => {
     if (v == null) return null
     return String(v).toLowerCase()
   },
-  proper: (v) => {
+  proper: (v: unknown): LiteralValue => {
     if (v == null) return null
-    return String(v).replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    return String(v).replace(/\w\S*/g, (w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
   },
-  trim: (v) => {
+  trim: (v: unknown): LiteralValue => {
     if (v == null) return null
     return String(v).trim()
   },
-  len: (v) => {
+  len: (v: unknown): LiteralValue => {
     if (v == null) return 0
     return String(v).length
   },
-  substr: (v, i, n) => {
+  substr: (v: unknown, i: unknown, n: unknown): LiteralValue => {
     if (v == null) return null
-    return String(v).substr(i, n)
+    const start: number = typeof i === 'number' ? i : Number(i) || 0
+    const length: number = typeof n === 'number' ? n : Number(n) || 0
+    return String(v).substr(start, length)
   },
-  concat: (...args) => args.map(a => a == null ? '' : String(a)).join(''),
-  round: (v, n) => {
+  concat: (...args: unknown[]): LiteralValue => args.map(a => a == null ? '' : String(a)).join(''),
+  round: (v: unknown, n: unknown): LiteralValue => {
     if (v == null) return null
-    const factor = Math.pow(10, n || 0)
+    const factor: number = Math.pow(10, typeof n === 'number' ? n : (Number(n) || 0))
     return Math.round(Number(v) * factor) / factor
   },
-  abs: (v) => {
+  abs: (v: unknown): LiteralValue => {
     if (v == null) return null
     return Math.abs(Number(v))
   },
-  number: (v) => {
+  number: (v: unknown): LiteralValue => {
     if (v == null) return null
-    const n = Number(v)
+    const n: number = Number(v)
     return isNaN(n) ? null : n
   },
-  text: (v) => {
+  text: (v: unknown): LiteralValue => {
     if (v == null) return null
     return String(v)
   },
-  format: (v, fmt) => {
+  format: (v: unknown, fmt: unknown): LiteralValue => {
     if (v == null) return null
-    const s = String(v)
-    if (!fmt) return s
-    const fmtStr = String(fmt)
+    const s: string = String(v)
+    if (fmt == null) return s
+    const fmtStr: string = String(fmt)
     if (fmtStr === 'DD/MM' || fmtStr === 'DD/MM/YYYY') {
-      const d = new Date(s)
+      const d: Date = new Date(s)
       if (!isNaN(d.getTime())) {
-        const day = String(d.getUTCDate()).padStart(2, '0')
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0')
-        const year = d.getUTCFullYear()
+        const day: string = String(d.getUTCDate()).padStart(2, '0')
+        const month: string = String(d.getUTCMonth() + 1).padStart(2, '0')
+        const year: number = d.getUTCFullYear()
         if (fmtStr === 'DD/MM') return `${day}/${month}`
         return `${day}/${month}/${year}`
       }
     }
     if (fmtStr === 'YYYY-MM-DD') {
-      const d = new Date(s)
+      const d: Date = new Date(s)
       if (!isNaN(d.getTime())) {
-        const day = String(d.getUTCDate()).padStart(2, '0')
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0')
-        const year = d.getUTCFullYear()
+        const day: string = String(d.getUTCDate()).padStart(2, '0')
+        const month: string = String(d.getUTCMonth() + 1).padStart(2, '0')
+        const year: number = d.getUTCFullYear()
         return `${year}-${month}-${day}`
       }
     }
     return s
   },
-  jsonstr: (v) => {
+  jsonstr: (v: unknown): LiteralValue => {
     if (v == null) return null
     try {
       return JSON.stringify(v)
@@ -170,26 +176,26 @@ const TRANSFORM_FUNCTIONS = {
       return null
     }
   },
-  if: (cond, thenVal, elseVal) => {
-    return cond ? thenVal : elseVal
+  if: (cond: unknown, thenVal: unknown, elseVal: unknown): LiteralValue => {
+    return cond ? (thenVal as LiteralValue) : (elseVal as LiteralValue)
   },
-  default: (v, fb) => {
-    return (v == null || v === undefined || v === '') ? fb : v
+  default: (v: unknown, fb: unknown): LiteralValue => {
+    return (v == null || v === undefined || v === '') ? (fb as LiteralValue) : (v as LiteralValue)
   },
-  coalesce: (...args) => {
+  coalesce: (...args: unknown[]): LiteralValue => {
     for (const arg of args) {
-      if (arg != null && arg !== undefined) return arg
+      if (arg != null && arg !== undefined) return arg as LiteralValue
     }
     return null
   }
 }
 
-function evaluateExpression(expression, responseData) {
+export function evaluateExpression(expression: string, responseData: unknown): LiteralValue {
   if (!expression) return null
 
-  const trimmed = expression.trim()
+  const trimmed: string = expression.trim()
 
-  if (!trimmed.includes('(')) {
+  if (trimmed.includes('(') === false) {
     if (trimmed.startsWith("'") && trimmed.endsWith("'")) return trimmed.slice(1, -1)
     if (trimmed.startsWith('"') && trimmed.endsWith('"')) return trimmed.slice(1, -1)
     if (trimmed === 'true') return true
@@ -197,25 +203,27 @@ function evaluateExpression(expression, responseData) {
     if (trimmed === 'null') return null
     if (/^-?\d+\.?\d*$/.test(trimmed)) return Number(trimmed)
     if (isDotNotation(trimmed) || isSimplePath(trimmed)) {
-      return getByDotNotation(trimmed, responseData)
+      const val: unknown = getByDotNotation(trimmed, responseData)
+      if (isLiteralValue(val)) return val
+      return null
     }
     return trimmed
   }
 
-  const match = trimmed.match(/^(\w+)\((.+)\)$/)
+  const match: RegExpMatchArray | null = trimmed.match(/^(\w+)\((.+)\)$/)
   if (!match) return null
 
-  const fnName = match[1].toLowerCase()
-  const argsRaw = parseArguments(match[2])
+  const fnName: string = match[1].toLowerCase()
+  const argsRaw: string[] = parseArguments(match[2])
 
   if (!TRANSFORM_FUNCTIONS[fnName]) return null
 
-  const args = argsRaw.map(arg => {
-    const argTrimmed = arg.trim()
-    const compMatch = argTrimmed.match(/^(.*?)\s*(==|!=)\s*(.*)$/)
+  const args: unknown[] = argsRaw.map((arg: string) => {
+    const argTrimmed: string = arg.trim()
+    const compMatch: RegExpMatchArray | null = argTrimmed.match(/^(.*?)\s*(==|!=)\s*(.*)$/)
     if (compMatch && fnName === 'if') {
-      const left = resolveValue(compMatch[1].trim(), responseData)
-      const right = resolveValue(compMatch[3].trim(), responseData)
+      const left: LiteralValue = resolveValue(compMatch[1].trim(), responseData)
+      const right: LiteralValue = resolveValue(compMatch[3].trim(), responseData)
       if (compMatch[2] === '==') return left == right
       return left != right
     }
@@ -227,7 +235,8 @@ function evaluateExpression(expression, responseData) {
     if (argTrimmed === 'null') return null
     if (/^-?\d+\.?\d*$/.test(argTrimmed)) return Number(argTrimmed)
     if (isDotNotation(argTrimmed) || isSimplePath(argTrimmed)) {
-      return getByDotNotation(argTrimmed, responseData)
+      const val: unknown = getByDotNotation(argTrimmed, responseData)
+      return val !== undefined ? val : null
     }
     return argTrimmed
   })
@@ -239,8 +248,8 @@ function evaluateExpression(expression, responseData) {
   }
 }
 
-function resolveValue(raw, responseData) {
-  const trimmed = raw.trim()
+function resolveValue(raw: string, responseData: unknown): LiteralValue {
+  const trimmed: string = raw.trim()
 
   if (trimmed.startsWith("'") && trimmed.endsWith("'")) return trimmed.slice(1, -1)
   if (trimmed.startsWith('"') && trimmed.endsWith('"')) return trimmed.slice(1, -1)
@@ -249,10 +258,11 @@ function resolveValue(raw, responseData) {
   if (trimmed === 'null') return null
   if (/^-?\d+\.?\d*$/.test(trimmed)) return Number(trimmed)
   if (isDotNotation(trimmed) || isSimplePath(trimmed)) {
-    const val = getByDotNotation(trimmed, responseData)
-    return val !== undefined ? val : trimmed
+    const val: unknown = getByDotNotation(trimmed, responseData)
+    if (val !== undefined) {
+      if (isLiteralValue(val)) return val
+    }
+    return trimmed
   }
   return trimmed
 }
-
-module.exports = { evaluateExpression, getByDotNotation }

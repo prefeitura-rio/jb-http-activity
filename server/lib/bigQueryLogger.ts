@@ -1,13 +1,14 @@
-const { BigQuery } = require('@google-cloud/bigquery')
+import { BigQuery } from '@google-cloud/bigquery'
+import { LogEntry } from '../types'
 
-const datasetId = process.env.BIGQUERY_DATASET || 'jb_http_activity'
-const tableId = process.env.BIGQUERY_TABLE || 'logs'
+const datasetId: string = process.env.BIGQUERY_DATASET || 'jb_http_activity'
+const tableId: string = process.env.BIGQUERY_TABLE || 'logs'
 
-let bigquery = null
-let pending = []
-let flushTimer = null
+let bigquery: BigQuery | null = null
+let pending: Record<string, unknown>[] = []
+let flushTimer: ReturnType<typeof setTimeout> | null = null
 
-function getClient() {
+function getClient(): BigQuery | null {
   if (!bigquery) {
     try {
       bigquery = new BigQuery()
@@ -18,17 +19,19 @@ function getClient() {
   return bigquery
 }
 
-function flush() {
+function flush(): void {
   flushTimer = null
-  const batch = pending.splice(0)
+  const batch: Record<string, unknown>[] = pending.splice(0)
   if (batch.length === 0) return
 
-  const client = getClient()
+  const client: BigQuery | null = getClient()
   if (!client) {
     for (const entry of batch) {
       try {
         console.log(JSON.stringify({ severity: 'BIGQUERY_FALLBACK', ...entry }))
-      } catch {}
+      } catch {
+        // ignore serialization errors
+      }
     }
     return
   }
@@ -37,21 +40,24 @@ function flush() {
     .dataset(datasetId)
     .table(tableId)
     .insert(batch)
-    .catch((err) => {
+    .catch((err: unknown) => {
       for (const entry of batch) {
         try {
+          const errorMessage: string = err instanceof Error ? err.message : 'Erro desconhecido'
           console.error(JSON.stringify({
             severity: 'BIGQUERY_ERROR',
-            error: err.message,
+            error: errorMessage,
             entry
           }))
-        } catch {}
+        } catch {
+          // ignore serialization errors
+        }
       }
     })
 }
 
-function log(entry) {
-  const row = {
+export function log(entry: LogEntry): void {
+  const row: Record<string, unknown> = {
     timestamp: entry.timestamp || new Date().toISOString(),
     journey_id: entry.journeyId || null,
     contact_key: entry.contactKey || null,
@@ -83,5 +89,3 @@ function log(entry) {
     flush()
   }
 }
-
-module.exports = { log }

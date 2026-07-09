@@ -9,35 +9,39 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 
-const props = defineProps({
-  modelValue: { type: Array, default: () => [] },
-  keyPlaceholder: { type: String, default: 'Chave' },
-  valuePlaceholder: { type: String, default: 'Valor' },
-  addLabel: { type: String, default: 'Adicionar' }
-})
+interface Row { key: string; value?: string }
 
-const emit = defineEmits(['update:modelValue'])
+const props = defineProps<{
+  modelValue?: Row[]
+  keyPlaceholder?: string
+  valuePlaceholder?: string
+  addLabel?: string
+}>()
 
-const rows = ref([])
+const emit = defineEmits<{
+  (e: 'update:modelValue', val: Row[]): void
+}>()
 
-watch(() => props.modelValue, (val) => {
+const rows = ref<Row[]>([])
+
+watch(() => props.modelValue, (val: Row[] | undefined) => {
   rows.value = val && val.length ? val.map(r => ({ ...r })) : []
 }, { immediate: true })
 
-function addRow() {
+function addRow(): void {
   rows.value.push({ key: '', value: '' })
   emitChange()
 }
 
-function removeRow(i) {
+function removeRow(i: number): void {
   rows.value.splice(i, 1)
   emitChange()
 }
 
-function emitChange() {
+function emitChange(): void {
   emit('update:modelValue', rows.value.map(r => ({ key: r.key, value: r.value })))
 }
 </script>

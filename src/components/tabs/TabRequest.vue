@@ -60,40 +60,40 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 import KeyValueEditor from '../shared/KeyValueEditor.vue'
 import BodyEditor from '../shared/BodyEditor.vue'
-import { requestConfig } from '../../store.js'
+import { requestConfig } from '../../store'
 
-const props = defineProps({
-  schema: { type: Array, default: () => [] },
-  initialData: { type: Object, default: () => ({}) }
-})
+const props = defineProps<{
+  schema?: unknown[]
+  initialData?: Record<string, unknown>
+}>()
 
-function parseArray(value) {
-  if (Array.isArray(value)) return value
+function parseArray(value: unknown): { key: string; value?: string }[] {
+  if (Array.isArray(value)) return value as { key: string; value?: string }[]
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value)
-      return Array.isArray(parsed) ? parsed : []
-    } catch (e) {
+      return Array.isArray(parsed) ? parsed as { key: string; value?: string }[] : []
+    } catch {
       return []
     }
   }
   return []
 }
 
-const method = ref('GET')
-const url = ref('')
-const headers = ref([])
-const queryParams = ref([])
-const body = ref('')
-const contentType = ref('application/json')
-const timeout = ref(30000)
-const retryCount = ref(0)
-const retryDelay = ref(1000)
-const treatErrorsAsOutput = ref(false)
+const method = ref<string>('GET')
+const url = ref<string>('')
+const headers = ref<{ key: string; value?: string }[]>([])
+const queryParams = ref<{ key: string; value?: string }[]>([])
+const body = ref<string>('')
+const contentType = ref<string>('application/json')
+const timeout = ref<number>(30000)
+const retryCount = ref<number>(0)
+const retryDelay = ref<number>(1000)
+const treatErrorsAsOutput = ref<boolean>(false)
 
 function loadInitialData(data) {
   if (!data) return

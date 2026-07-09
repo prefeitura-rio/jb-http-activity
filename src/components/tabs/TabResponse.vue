@@ -31,6 +31,10 @@
 
     <div class="test-section">
       <h4>Testar requisição</h4>
+      <div class="jwt-field">
+        <label>Token de autenticação</label>
+        <input v-model="jwtToken" type="password" placeholder="Cole o JWT de autenticação" class="jwt-input" />
+      </div>
       <button class="btn-exec" @click="executeTest" :disabled="testing">
         {{ testing ? 'Executando...' : 'Executar com dados de teste' }}
       </button>
@@ -55,7 +59,12 @@
           <div v-for="(val, key) in testResponse.mapped" :key="key" class="mapped-result" :class="mappedClass(val)" v-text="mappedText(key, val)"></div>
         </div>
       </div>
-      <div v-if="testError" class="test-error">
+      <div v-if="testError && testError.error === 'URL nao liberada'" class="allowlist-block">
+        <div class="allowlist-header">🔒 URL não liberada</div>
+        <div class="allowlist-domain">{{ testError.blockedDomain }}</div>
+        <div class="allowlist-msg">{{ testError.message }}</div>
+      </div>
+      <div v-else-if="testError" class="test-error">
         <div class="error-header-bar">
           <span class="error-badge-large">{{ testError.statusCode || '—' }} {{ testError.statusText || 'Erro' }}</span>
           <span class="backend-label" v-if="testError.backendStatus">  Backend: </span>
@@ -77,42 +86,62 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import ResponseMapping from '../shared/ResponseMapping.vue'
 import FunctionHelperModal from '../shared/FunctionHelperModal.vue'
-import axios from 'axios'
-import { requestConfig } from '../../store.js'
+import axios, { AxiosResponse } from 'axios'
+import { requestConfig } from '../../store'
 
-const props = defineProps({
-  initialData: { type: Object, default: () => ({}) }
-})
+const props = defineProps<{
+  initialData?: Record<string, unknown>
+}>()
 
-const responseMapping = ref([])
-const showFunctions = ref(false)
-const testing = ref(false)
-const testResponse = ref(null)
-const testError = ref('')
+interface ResponseMappingRow {
+  expression?: string
+  outputName?: string
+  type?: string
+}
 
-function parseArray(value) {
-  if (Array.isArray(value)) return value
+interface TestResponseData {
+  isError: boolean
+  backendStatus: number
+  statusCode: number
+  statusText: string
+  url: string
+  duration: number
+  timestamp: string
+  attempts: number
+  body: string
+  mapped: Record<string, unknown>
+}
+
+const jwtToken = ref<string>('')
+const responseMapping = ref<ResponseMappingRow[]>([])
+const showFunctions = ref<boolean>(false)
+const testing = ref<boolean>(false)
+const testResponse = ref<TestResponseData | null>(null)
+const testError = ref<string>('')
+
+function parseArray(value: unknown): ResponseMappingRow[] {
+  if (Array.isArray(value)) return value as ResponseMappingRow[]
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value)
-      return Array.isArray(parsed) ? parsed : []
-    } catch (e) {
+      return Array.isArray(parsed) ? parsed as ResponseMappingRow[] : []
+    } catch {
       return []
     }
   }
   return []
 }
 
-function loadInitialData(data) {
+function loadInitialData(data: Record<string, unknown> | undefined): void {
   if (!data) return
   responseMapping.value = parseArray(data.responseMapping)
 }
 
-function getData() {
+function getData(): { responseMapping: ResponseMappingRow[] } {
   return {
     responseMapping: responseMapping.value || []
   }
@@ -122,29 +151,29 @@ defineExpose({ getData })
 
 watch(
   () => props.initialData,
-  (data) => {
+  (data: Record<string, unknown> | undefined) => {
     loadInitialData(data)
   },
   { deep: true, immediate: true }
 )
 
-const allVariables = computed(() => {
+const allVariables = computed<string[]>(() => {
   const builtins = ['{{Interaction.HTTP-1.httpStatusCode}}', '{{Interaction.HTTP-1.httpStatusClass}}', '{{Interaction.HTTP-1.httpSuccess}}']
-  const mapped = (responseMapping.value || []).filter(m => m.outputName).map(m => '{{Interaction.HTTP-1.' + m.outputName + '}}')
+  const mapped = (responseMapping.value || []).filter((m: ResponseMappingRow) => m.outputName).map((m: ResponseMappingRow) => '{{Interaction.HTTP-1.' + m.outputName + '}}')
   return [...builtins, ...mapped]
 })
 
-function formatTimestamp(ts) {
+function formatTimestamp(ts: unknown): string {
   if (!ts) return ''
   try {
-    return new Date(ts).toLocaleString('pt-BR')
+    return new Date(ts as string).toLocaleString('pt-BR')
   } catch {
-    return ts
+    return String(ts)
   }
 }
 
-function truncateUrl(url) {
-  if (!url) return '—'
+function truncateUrl(url: unknown): string {
+  if (!url || typeof url !== 'string') return '—'
   try {
     const u = new URL(url)
     return u.host + u.pathname
@@ -153,13 +182,18 @@ function truncateUrl(url) {
   }
 }
 
-async function executeTest() {
+async function executeTest(): Promise<void> {
   testing.value = true
   testError.value = ''
   testResponse.value = null
 
   try {
-    const res = await axios.post(`${import.meta.env.BASE_URL}preview`, {
+    const axiosHeaders: Record<string, string> = {}
+    if (jwtToken.value) {
+      axiosHeaders['Authorization'] = `Bearer ${jwtToken.value}`
+    }
+
+    const res: AxiosResponse<Record<string, unknown>> = await axios.post(`${import.meta.env.BASE_URL}preview`, {
       inArguments: [
         { method: requestConfig.method },
         { url: requestConfig.url },
@@ -171,37 +205,52 @@ async function executeTest() {
         { responseMapping: responseMapping.value },
         { treatErrorsAsOutput: requestConfig.treatErrorsAsOutput, timeout: requestConfig.timeout, retryCount: requestConfig.retryCount, retryDelay: requestConfig.retryDelay }
       ]
-    })
+    }, { headers: axiosHeaders })
 
-    const isError = res.data.httpStatusCode >= 400
-    const mapped = {}
+    const data = res.data
+    const isError: boolean = (data.httpStatusCode as number) >= 400
+    const mapped: Record<string, unknown> = {}
     for (const m of responseMapping.value) {
-      if (m.outputName) mapped[m.outputName] = res.data[m.outputName]
+      if (m.outputName) mapped[m.outputName] = data[m.outputName]
     }
 
     testResponse.value = {
       isError,
       backendStatus: res.status,
-      statusCode: res.data.httpStatusCode,
-      statusText: isError ? (res.data.httpStatusClass || 'Error') : 'OK',
-      url: truncateUrl(res.data._url || requestConfig.url),
-      duration: res.data._duration || 0,
-      timestamp: formatTimestamp(res.data._timestamp),
-      attempts: res.data._attempts || 1,
-      body: res.data._rawBody ? (typeof res.data._rawBody === 'string' ? res.data._rawBody : JSON.stringify(res.data._rawBody, null, 2)) : '',
-      mapped: { ...mapped, httpStatusCode: res.data.httpStatusCode, httpSuccess: res.data.httpSuccess }
+      statusCode: data.httpStatusCode as number,
+      statusText: isError ? ((data.httpStatusClass as string) || 'Error') : 'OK',
+      url: truncateUrl(data._url || requestConfig.url),
+      duration: (data._duration as number) || 0,
+      timestamp: formatTimestamp(data._timestamp),
+      attempts: (data._attempts as number) || 1,
+      body: data._rawBody ? (typeof data._rawBody === 'string' ? data._rawBody : JSON.stringify(data._rawBody, null, 2)) : '',
+      mapped: { ...mapped, httpStatusCode: data.httpStatusCode, httpSuccess: data.httpSuccess }
     }
-  } catch (err) {
-    const errorData = err.response?.data
-    testError.value = {
-      backendStatus: err.response?.status,
-      statusCode: errorData?.httpStatusCode || err.response?.status || '—',
-      statusText: errorData?.httpStatusClass || 'Falha',
-      url: truncateUrl(requestConfig.url),
-      duration: errorData?._duration || 0,
-      attempts: errorData?._attempts || 1,
-      timestamp: formatTimestamp(errorData?._timestamp),
-      message: err.response?.data?.error || err.message || 'Erro de conexao'
+  } catch (err: unknown) {
+    const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown> }; message?: string }
+    const errorData = axiosErr.response?.data
+
+    // ALLOWLIST: resposta amigavel
+    if (errorData && (errorData.error as string) === 'URL nao liberada') {
+      testError.value = {
+        ...errorData,
+        backendStatus: axiosErr.response?.status || 403
+      } as unknown as string
+    } else {
+      const statusCode = (errorData?.httpStatusCode as number) || axiosErr.response?.status || 0
+      const statusText = (errorData?.httpStatusClass as string) || 'Falha'
+      testError.value = {
+        backendStatus: axiosErr.response?.status || 0,
+        statusCode,
+        statusText,
+        url: truncateUrl(requestConfig.url),
+        duration: (errorData?._duration as number) || 0,
+        attempts: (errorData?._attempts as number) || 1,
+        timestamp: formatTimestamp(errorData?._timestamp),
+        message: typeof axiosErr.response?.data === 'object' && axiosErr.response?.data
+          ? ((axiosErr.response.data as Record<string, unknown>).error as string) || axiosErr.message || 'Erro de conexao'
+          : axiosErr.message || 'Erro de conexao'
+      } as unknown as string
     }
   } finally {
     testing.value = false
@@ -234,6 +283,9 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .vars-list { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; }
 .vars-list code { font-size: 12px; font-family: monospace; color: #0070d2; }
 .btn-copy { background: #28a745; color: #fff; border: none; border-radius: 3px; padding: 5px 10px; cursor: pointer; font-size: 12px; }
+.jwt-field { margin-bottom: 8px; }
+.jwt-field label { display: block; font-size: 12px; font-weight: 600; color: #444; margin-bottom: 3px; }
+.jwt-input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; box-sizing: border-box; font-family: monospace; }
 .btn-exec { background: #0070d2; color: #fff; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; font-size: 13px; }
 .btn-exec:disabled { background: #999; cursor: not-allowed; }
 .test-response { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 8px; margin-top: 8px; }
@@ -267,4 +319,9 @@ h4 { margin: 0; font-size: 13px; color: #333; }
 .meta-timestamp { color: #888; white-space: nowrap; }
 .response-body pre { font-size: 11px; font-family: monospace; background: #fff; border: 1px solid #eee; border-radius: 3px; padding: 6px; overflow-x: auto; margin: 4px 0; }
 .response-mappings { margin-top: 4px; }
+.allowlist-block { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; margin-top: 8px; }
+.allowlist-header { font-size: 14px; font-weight: 700; color: #856404; margin-bottom: 6px; }
+.allowlist-domain { font-family: monospace; font-size: 13px; color: #721c24; background: #fff; border: 1px solid #ffc107; border-radius: 3px; padding: 4px 6px; margin-bottom: 8px; word-break: break-all; }
+.allowlist-msg { font-size: 12px; color: #555; margin-bottom: 8px; }
+
 </style>

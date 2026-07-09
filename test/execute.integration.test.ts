@@ -1,34 +1,36 @@
-const assert = require('assert')
-const http = require('http')
-const express = require('express')
+import assert from 'assert'
+import http from 'http'
+import express from 'express'
 
 const PORT = 3001
 const BASE_URL = `http://localhost:${PORT}`
 
-let server
+let server: http.Server
 
-before(function(done) {
+before(function(done: (err?: Error) => void) {
   const app = express()
   app.use(express.json())
-  app.get('/health', (req, res) => res.json({ status: 'ok' }))
-  app.post('/execute', function(req, res) {
+  app.get('/health', (req: express.Request, res: express.Response) => res.json({ status: 'ok' }))
+  app.post('/execute', (req: express.Request, res: express.Response) => {
     const inArgs = req.body && req.body.inArguments
     if (!inArgs || !Array.isArray(inArgs) || !inArgs.length) {
-      return res.status(400).json({ error: 'inArguments ausente' })
+      res.status(400).json({ error: 'inArguments ausente' })
+      return
     }
-    const config = inArgs.reduce((acc, arg) => ({ ...acc, ...arg }), {})
+    const config = inArgs.reduce((acc: Record<string, unknown>, arg: Record<string, unknown>) => ({ ...acc, ...arg }), {})
     res.status(200).json({
       httpStatusCode: 200,
       httpSuccess: true,
       httpStatusClass: '2xx'
     })
   })
-  app.post('/preview', function(req, res) {
+  app.post('/preview', (req: express.Request, res: express.Response) => {
     const inArgs = req.body && req.body.inArguments
     if (!inArgs || !Array.isArray(inArgs) || !inArgs.length) {
-      return res.status(400).json({ error: 'inArguments ausente' })
+      res.status(400).json({ error: 'inArguments ausente' })
+      return
     }
-    const config = inArgs.reduce((acc, arg) => ({ ...acc, ...arg }), {})
+    const config = inArgs.reduce((acc: Record<string, unknown>, arg: Record<string, unknown>) => ({ ...acc, ...arg }), {})
     res.status(200).json({
       httpStatusCode: 200,
       httpSuccess: true,
@@ -41,12 +43,12 @@ before(function(done) {
   server = app.listen(PORT, done)
 })
 
-after(function(done) {
+after(function(done: (err?: Error) => void) {
   server.close(done)
 })
 
 describe('/execute - integracao', function() {
-  this.timeout(10000)
+  // timeout set via mocha config in package.json
 
   it('GET /health retorna ok', async function() {
     const data = await fetchJson(`${BASE_URL}/health`)
@@ -84,16 +86,21 @@ describe('/execute - integracao', function() {
     assert.strictEqual(res.httpStatusCode, 200)
     assert.strictEqual(res.httpSuccess, true)
     assert.strictEqual(res.httpStatusClass, '2xx')
-    assert.ok(res._duration !== undefined)
-    assert.ok(res._timestamp !== undefined)
-    assert.ok(res._url !== undefined)
+    assert.notStrictEqual(res._duration, undefined)
+    assert.notStrictEqual(res._timestamp, undefined)
+    assert.notStrictEqual(res._url, undefined)
   })
 })
 
-function fetchJson(url, options = {}) {
+interface FetchOptions {
+  method?: string
+  body?: Record<string, unknown>
+}
+
+function fetchJson(url: string, options: FetchOptions = {}): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
     const u = new URL(url)
-    const opts = {
+    const opts: http.RequestOptions = {
       hostname: u.hostname,
       port: u.port,
       path: u.pathname,
@@ -101,9 +108,9 @@ function fetchJson(url, options = {}) {
       headers: { 'Content-Type': 'application/json' }
     }
 
-    const req = http.request(opts, (res) => {
+    const req = http.request(opts, (res: http.IncomingMessage) => {
       let data = ''
-      res.on('data', (chunk) => { data += chunk })
+      res.on('data', (chunk: string) => { data += chunk })
       res.on('end', () => {
         try {
           resolve(JSON.parse(data))

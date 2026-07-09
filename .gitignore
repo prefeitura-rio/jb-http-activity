@@ -7,6 +7,9 @@ dist/
 Thumbs.db
 .DS_Store
 
+# TypeScript compiled output
+build/
+
 # Test coverage
 coverage/
 .nyc_output/
@@ -19,6 +22,8 @@ coverage/
 
 # Local-only docs
 AGENTS.md
+chamado-salesforce.md
+plano-correcao-bloqueadores.md
 
 # Playwright MCP artifacts
 .playwright-mcp/

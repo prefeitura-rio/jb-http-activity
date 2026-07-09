@@ -36,9 +36,9 @@
   </div>
 </template>
 
-<script setup>
-defineProps({ visible: Boolean })
-defineEmits(['close'])
+<script setup lang="ts">
+defineProps<{ visible?: boolean }>()
+const emit = defineEmits<{ (e: 'close'): void }>()
 
 const textFuncs = [
   { syntax: 'UPPER(v)', desc: 'caixa alta' },

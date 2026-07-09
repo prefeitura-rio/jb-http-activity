@@ -16,71 +16,96 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import ActivityName from './components/ActivityName.vue'
 import TabRequest from './components/tabs/TabRequest.vue'
 import TabAuth from './components/tabs/TabAuth.vue'
 import TabResponse from './components/tabs/TabResponse.vue'
-import { requestConfig } from './store.js'
+import { requestConfig } from './store'
 
-const activeTab = ref('request')
+const activeTab = ref<string>('request')
 const tabs = [
   { id: 'request', label: 'Request' },
   { id: 'auth', label: 'Auth' },
   { id: 'response', label: 'Response' }
 ]
 
-const config = ref({})
-const schema = ref([])
-const activityNameRef = ref(null)
-const requestRef = ref(null)
-const authRef = ref(null)
-const responseRef = ref(null)
+interface TabConfig {
+  name?: string
+  [key: string]: unknown
+}
 
-let connection = null
+interface ActivityTabInstance {
+  getData?: () => Record<string, unknown>
+  getName?: () => string
+  setName?: (val: string) => void
+}
+
+const config = ref<Record<string, unknown>>({})
+const schema = ref<unknown[]>([])
+const activityNameRef = ref<ActivityTabInstance | null>(null)
+const requestRef = ref<ActivityTabInstance | null>(null)
+const authRef = ref<ActivityTabInstance | null>(null)
+const responseRef = ref<ActivityTabInstance | null>(null)
+
+let connection: PostmongerSession | null = null
 let baseUrl = 'http://localhost:3000'
 let executeUrl = 'http://localhost:3000/execute'
 
-function getConfig() {
-  const name = activityNameRef.value ? activityNameRef.value.getName() : ''
+function getConfig(): Record<string, unknown> {
+  const name = activityNameRef.value ? activityNameRef.value.getName() ?? '' : ''
 
-  const request = requestRef.value?.getData ? requestRef.value.getData() : {}
-  const response = responseRef.value?.getData ? responseRef.value.getData() : {}
+  const request = (requestRef.value?.getData ? requestRef.value.getData() : {}) as Record<string, unknown>
+  const response = (responseRef.value?.getData ? responseRef.value.getData() : {}) as Record<string, unknown>
 
   return {
     activityName: name,
-    method: request.method || 'GET',
-    url: request.url || '',
+    method: (request.method as string) || 'GET',
+    url: (request.url as string) || '',
     headers: JSON.stringify(request.headers || []),
     queryParams: JSON.stringify(request.queryParams || []),
-    body: request.body || '',
-    contentType: request.contentType || 'application/json',
+    body: (request.body as string) || '',
+    contentType: (request.contentType as string) || 'application/json',
     auth: JSON.stringify(requestConfig.auth || { type: 'none' }),
     responseMapping: JSON.stringify(response.responseMapping || []),
-    treatErrorsAsOutput: !!request.treatErrorsAsOutput,
-    timeout: request.timeout || 30000,
-    retryCount: request.retryCount || 0,
-    retryDelay: request.retryDelay || 1000
+    treatErrorsAsOutput: !!(request.treatErrorsAsOutput),
+    timeout: (request.timeout as number) || 30000,
+    retryCount: (request.retryCount as number) || 0,
+    retryDelay: (request.retryDelay as number) || 1000
   }
 }
 
-function getOutputDefinitions() {
-  const response = responseRef.value?.getData ? responseRef.value.getData() : {}
-  const mappings = response.responseMapping || []
+interface OutputDef {
+  name: string
+  dataType: string
+  defaultValue: unknown
+}
 
-  const outputs = [
+interface SchemaField {
+  name: string
+  dataType: string
+  direction: string
+  access: string
+  isNullable: boolean
+}
+
+function getOutputDefinitions(): OutputDef[] {
+  const response = (responseRef.value?.getData ? responseRef.value.getData() : {}) as Record<string, unknown>
+  const mappings = (response.responseMapping as Record<string, unknown>[]) || []
+
+  const outputs: OutputDef[] = [
     { name: 'httpStatusCode', dataType: 'number', defaultValue: 0 },
     { name: 'httpStatusClass', dataType: 'text', defaultValue: '' },
     { name: 'httpSuccess', dataType: 'boolean', defaultValue: false }
   ]
 
   for (const m of mappings) {
-    if (m.outputName) {
+    if (m && typeof m === 'object' && 'outputName' in m) {
       outputs.push({
-        name: m.outputName,
-        dataType: mapDataType(m.type),
-        defaultValue: getDefaultValue(m.type)
+        name: m.outputName as string,
+        dataType: mapDataType(m.type as string | undefined),
+        defaultValue: getDefaultValue(m.type as string | undefined)
       })
     }
   }
@@ -88,13 +113,13 @@ function getOutputDefinitions() {
   return outputs
 }
 
-function getOutArgumentsValues() {
+function getOutArgumentsValues(): Record<string, unknown>[] {
   return getOutputDefinitions().map(o => ({
     [o.name]: o.defaultValue
   }))
 }
 
-function getOutArgumentsSchema() {
+function getOutArgumentsSchema(): Record<string, SchemaField>[] {
   return getOutputDefinitions().map(o => ({
     [o.name]: {
       dataType: o.dataType,
@@ -105,14 +130,14 @@ function getOutArgumentsSchema() {
   }))
 }
 
-function mapDataType(type) {
+function mapDataType(type: string | undefined): string {
   if (type === 'number') return 'number'
   if (type === 'boolean') return 'boolean'
   if (type === 'date') return 'date'
   return 'text'
 }
 
-function getDefaultValue(type) {
+function getDefaultValue(type: string | undefined): unknown {
   if (type === 'number') return 0
   if (type === 'boolean') return false
   return ''
@@ -121,14 +146,16 @@ function getDefaultValue(type) {
 onMounted(async () => {
   try {
     const resp = await fetch(`${import.meta.env.BASE_URL}config.json`)
-    const appConfig = await resp.json()
-    const url = appConfig.arguments?.execute?.url
+    const appConfig: Record<string, unknown> = await resp.json()
+    const args = appConfig.arguments as Record<string, unknown> | undefined
+    const exec = args?.execute as Record<string, unknown> | undefined
+    const url = exec?.url as string | undefined
     if (url) {
       const idx = url.lastIndexOf('/')
       baseUrl = idx > 0 ? url.substring(0, idx) : url
       executeUrl = url
     }
-  } catch (err) {
+  } catch (err: unknown) {
     if (import.meta.env.DEV) {
       console.error('Erro ao carregar config.json:', err)
     }
@@ -136,43 +163,49 @@ onMounted(async () => {
 
   connection = new window.Postmonger.Session()
 
-  connection.on('initActivity', function(data) {
-    const args = data && data.arguments && data.arguments.execute && data.arguments.execute.inArguments
+  connection.on('initActivity', function(data: unknown) {
+    const d = data as Record<string, unknown> | null
+    if (!d) return
 
-    if (args && args.length) {
-      config.value = args.reduce((acc, arg) => ({ ...acc, ...arg }), {})
+    const args = d.arguments as Record<string, unknown> | undefined
+    const exec = args?.execute as Record<string, unknown> | undefined
+    const inArgs = exec?.inArguments as Record<string, unknown>[] | undefined
+
+    if (inArgs && inArgs.length) {
+      config.value = inArgs.reduce((acc: Record<string, unknown>, arg: Record<string, unknown>) => ({ ...acc, ...arg }), {})
     }
 
-    if (data && data.name && activityNameRef.value) {
-      activityNameRef.value.setName(data.name)
-    } else if (config.value.activityName && activityNameRef.value) {
+    if (d.name && typeof d.name === 'string' && activityNameRef.value && activityNameRef.value.setName) {
+      activityNameRef.value.setName(d.name)
+    } else if (typeof config.value.activityName === 'string' && activityNameRef.value && activityNameRef.value.setName) {
       activityNameRef.value.setName(config.value.activityName)
     }
 
-    connection.trigger('requestSchema')
+    connection?.trigger('requestSchema')
   })
 
-  connection.on('requestedSchema', function(data) {
-    if (data && data.schema) {
-      schema.value = data.schema
+  connection.on('requestedSchema', function(data: unknown) {
+    const d = data as { schema?: unknown[] } | null
+    if (d && d.schema) {
+      schema.value = d.schema
     }
   })
 
   connection.on('clickedNext', saveActivity)
   connection.on('clickedDone', saveActivity)
   connection.on('clickedBack', function() {
-    connection.trigger('ready')
+    connection?.trigger('ready')
   })
 
-  connection.trigger('ready')
+  connection?.trigger('ready')
 })
 
-function saveActivity() {
-  const name = activityNameRef.value ? activityNameRef.value.getName() : ''
+function saveActivity(): void {
+  const name = activityNameRef.value && activityNameRef.value.getName ? activityNameRef.value.getName() ?? '' : ''
   const outArgumentsValues = getOutArgumentsValues()
   const outArgumentsSchema = getOutArgumentsSchema()
 
-  const payload = {
+  const payload: Record<string, unknown> = {
     name,
     metaData: {
       isConfigured: true
@@ -221,7 +254,7 @@ function saveActivity() {
   if (import.meta.env.DEV) {
     console.log('UpdateActivity payload:', JSON.stringify(payload, null, 2))
   }
-  connection.trigger('updateActivity', payload)
+  connection?.trigger('updateActivity', payload)
 }
 </script>
 
