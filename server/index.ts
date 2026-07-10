@@ -24,6 +24,7 @@ process.on('uncaughtException', (err: Error) => {
 })
 
 const app = express()
+app.disable('x-powered-by')
 const PORT: number = parseInt(process.env.PORT || '3000', 10)
 
 const uiBasePath: string = (process.env.UI_BASE_PATH || '/').replace(/\/+$/, '') || '/'

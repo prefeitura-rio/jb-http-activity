@@ -16,7 +16,7 @@ function parseLiteral(value: string): LiteralValue {
   if (value === 'false') return false
   if (value === 'null') return null
   if (value === 'undefined') return undefined
-  if (/^-?\d+\.?\d*$/.test(value)) return Number(value)
+  if (/^-?\d+(\.\d*)?$/.test(value)) return Number(value)
   const singleMatch: RegExpMatchArray | null = value.match(/^'(.*)'$/)
   if (singleMatch) return singleMatch[1]
   const doubleMatch: RegExpMatchArray | null = value.match(/^"(.*)"$/)
@@ -201,7 +201,7 @@ export function evaluateExpression(expression: string, responseData: unknown): L
     if (trimmed === 'true') return true
     if (trimmed === 'false') return false
     if (trimmed === 'null') return null
-    if (/^-?\d+\.?\d*$/.test(trimmed)) return Number(trimmed)
+    if (/^-?\d+(\.\d*)?$/.test(trimmed)) return Number(trimmed)
     if (isDotNotation(trimmed) || isSimplePath(trimmed)) {
       const val: unknown = getByDotNotation(trimmed, responseData)
       if (isLiteralValue(val)) return val
@@ -233,7 +233,7 @@ export function evaluateExpression(expression: string, responseData: unknown): L
     if (argTrimmed === 'true') return true
     if (argTrimmed === 'false') return false
     if (argTrimmed === 'null') return null
-    if (/^-?\d+\.?\d*$/.test(argTrimmed)) return Number(argTrimmed)
+    if (/^-?\d+(\.\d*)?$/.test(argTrimmed)) return Number(argTrimmed)
     if (isDotNotation(argTrimmed) || isSimplePath(argTrimmed)) {
       const val: unknown = getByDotNotation(argTrimmed, responseData)
       return val !== undefined ? val : null
@@ -256,7 +256,7 @@ function resolveValue(raw: string, responseData: unknown): LiteralValue {
   if (trimmed === 'true') return true
   if (trimmed === 'false') return false
   if (trimmed === 'null') return null
-  if (/^-?\d+\.?\d*$/.test(trimmed)) return Number(trimmed)
+  if (/^-?\d+(\.\d*)?$/.test(trimmed)) return Number(trimmed)
   if (isDotNotation(trimmed) || isSimplePath(trimmed)) {
     const val: unknown = getByDotNotation(trimmed, responseData)
     if (val !== undefined) {
