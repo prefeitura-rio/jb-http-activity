@@ -1,13 +1,29 @@
 (function (window) {
+  var ALLOWED_ORIGIN_PATTERN = /^https:\/\/([a-z0-9-]+\.)*(exacttarget\.com|marketingcloudapps\.com)$/i
+
+  function isAllowedOrigin(origin) {
+    return typeof origin === 'string' && ALLOWED_ORIGIN_PATTERN.test(origin)
+  }
+
+  function referrerOrigin() {
+    try {
+      return document.referrer ? new URL(document.referrer).origin : null
+    } catch (e) {
+      return null
+    }
+  }
+
   function Session() {
     this.handlers = {}
   }
 
   Session.prototype.trigger = function (event, data) {
+    var origin = referrerOrigin()
+    var targetOrigin = isAllowedOrigin(origin) ? origin : window.location.origin
     window.parent.postMessage({
       method: event,
       data: data
-    }, '*')
+    }, targetOrigin)
   }
 
   Session.prototype.on = function (event, callback) {
@@ -15,6 +31,8 @@
   }
 
   window.addEventListener('message', function (event) {
+    if (!isAllowedOrigin(event.origin)) return
+
     var message = event.data || {}
     var method = message.method
     var data = message.data

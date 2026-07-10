@@ -27,11 +27,14 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
       - name: Extract release version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          REPO_OWNER: ${{ github.repository_owner }}
         run: |
-          VERSION=${{ github.ref_name }}
+          VERSION="$RELEASE_TAG"
           VERSION_NO_V=${VERSION#v}
           COMMIT_HASH=$(git rev-parse --short HEAD)
-          echo "IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/jb-http-activity" >> $GITHUB_ENV
+          echo "IMAGE_NAME=ghcr.io/$REPO_OWNER/jb-http-activity" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION_NO_V=$VERSION_NO_V" >> $GITHUB_ENV
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
