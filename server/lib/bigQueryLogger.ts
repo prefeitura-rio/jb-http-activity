@@ -41,12 +41,21 @@ function flush(): void {
     .table(tableId)
     .insert(batch)
     .catch((err: unknown) => {
+      // BigQuery insert errors (e.g. PartialFailureError from unknown/mismatched
+      // fields) carry the real reason in err.errors, not err.message, which is
+      // often empty/generic. Capture both so failures are actually diagnosable.
+      const errorDetail: unknown = err instanceof Error
+        ? {
+            name: err.name,
+            message: err.message,
+            errors: (err as Error & { errors?: unknown }).errors
+          }
+        : String(err)
       for (const entry of batch) {
         try {
-          const errorMessage: string = err instanceof Error ? err.message : 'Erro desconhecido'
           console.error(JSON.stringify({
             severity: 'BIGQUERY_ERROR',
-            error: errorMessage,
+            error: errorDetail,
             entry
           }))
         } catch {
