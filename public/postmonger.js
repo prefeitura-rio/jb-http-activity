@@ -1,5 +1,5 @@
 (function (window) {
-  var ALLOWED_ORIGIN_PATTERN = /^https:\/\/([a-z0-9-]+\.)*(exacttarget\.com|marketingcloudapps\.com)$/i
+  const ALLOWED_ORIGIN_PATTERN = /^https:\/\/([a-z0-9-]+\.)*(exacttarget\.com|marketingcloudapps\.com)$/i
 
   function isAllowedOrigin(origin) {
     return typeof origin === 'string' && ALLOWED_ORIGIN_PATTERN.test(origin)
@@ -8,7 +8,7 @@
   function referrerOrigin() {
     try {
       return document.referrer ? new URL(document.referrer).origin : null
-    } catch (e) {
+    } catch {
       return null
     }
   }
@@ -18,8 +18,8 @@
   }
 
   Session.prototype.trigger = function (event, data) {
-    var origin = referrerOrigin()
-    var targetOrigin = isAllowedOrigin(origin) ? origin : window.location.origin
+    const origin = referrerOrigin()
+    const targetOrigin = isAllowedOrigin(origin) ? origin : window.location.origin
     window.parent.postMessage({
       method: event,
       data: data
