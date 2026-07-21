@@ -81,6 +81,7 @@ export function log(entry: LogEntry): void {
     error_summary: entry.errorSummary || null,
     message: entry.message || null,
     out_arguments: entry.outArguments ? JSON.stringify(entry.outArguments) : null,
+    request_input: entry.requestInput ? JSON.stringify(entry.requestInput) : null,
     environment: process.env.NODE_ENV || null
   }
 
