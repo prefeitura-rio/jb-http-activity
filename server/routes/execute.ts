@@ -77,6 +77,14 @@ export default async function executeRoute(req: Request, res: Response): Promise
       headersMap['Content-Type'] = contentType
     }
 
+    const requestInput: Record<string, unknown> = {
+      url: config.url,
+      method,
+      headers: headersMap,
+      queryParams: paramsMap,
+      body: bodyData
+    }
+
     const startTime: number = Date.now()
 
     const httpResponse = await request({
@@ -126,6 +134,7 @@ export default async function executeRoute(req: Request, res: Response): Promise
       success: isSuccess,
       treatErrorsAsOutput: config.treatErrorsAsOutput,
       outArguments: outArgs,
+      requestInput,
       errorSummary: null,
       message: isSuccess
         ? `HTTP ${statusCode} (${durationMs}ms)`
@@ -169,6 +178,7 @@ export default async function executeRoute(req: Request, res: Response): Promise
       statusClass: '0xx',
       success: false,
       outArguments: outArgs,
+      requestInput: undefined,
       errorSummary: err instanceof Error ? err.message : 'Erro interno',
       message: `Erro: ${err instanceof Error ? err.message : 'Erro interno do servidor'}`
     }
