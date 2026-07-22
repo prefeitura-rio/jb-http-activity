@@ -23,6 +23,8 @@ export default async function executeRoute(req: Request, res: Response): Promise
 
     config = inArgs.reduce((acc: InArgObject, arg: InArgObject) => ({ ...acc, ...arg }), {})
 
+    console.log(`[EXECUTE] inArguments recebidos: method=${config.method} url=${config.url} primaryKeyValue=${JSON.stringify(config.primaryKeyValue)} deExternalKey=${JSON.stringify(config.deExternalKey)} deKeyField=${JSON.stringify(config.deKeyField)}`)
+
     const rawHeaders: unknown = safeParse(config.headers)
     const rawQueryParams: unknown = safeParse(config.queryParams)
     const rawAuth: unknown = safeParse(config.auth)
@@ -88,6 +90,8 @@ export default async function executeRoute(req: Request, res: Response): Promise
 
     const startTime: number = Date.now()
 
+    console.log(`[HTTP] chamando ${method} ${typeof config.url === 'string' ? config.url : ''}...`)
+
     const httpResponse = await request({
       method,
       url: typeof config.url === 'string' ? config.url : '',
@@ -104,7 +108,11 @@ export default async function executeRoute(req: Request, res: Response): Promise
     const statusClass: string = `${Math.floor(statusCode / 100)}xx`
     const isSuccess: boolean = statusCode >= 200 && statusCode < 300
 
+    console.log(`[HTTP] resposta: status=${statusCode} duracao=${durationMs}ms sucesso=${isSuccess}`)
+
     const mapped: Record<string, unknown> = extract(httpResponse.data, responseMapping)
+
+    console.log(`[MAPPING] campos extraidos: ${JSON.stringify(mapped)}`)
 
     const outArgs: OutArgs = {
       httpStatusCode: statusCode,
@@ -149,11 +157,17 @@ export default async function executeRoute(req: Request, res: Response): Promise
       deUpdateSkippedReason = 'SFMC nao configurado (SFMC_AUTH_URI/SFMC_CLIENT_ID/SFMC_CLIENT_SECRET)'
     }
 
+    if (deUpdateSkippedReason) {
+      console.log(`[DE] pulando gravacao: ${deUpdateSkippedReason}`)
+    }
+
     if (isSuccess && config._preview !== true && primaryKeyValue && deExternalKey && isSfmcConfigured()) {
+      console.log(`[DE] atualizando ${deKeyField || 'SubscriberKey'}=${primaryKeyValue} na DE ${deExternalKey}...`)
       const deResult = await updateDataExtensionRow(primaryKeyValue, mapped, deExternalKey, deKeyField)
       deUpdateSuccess = deResult.success
       deUpdateError = deResult.success ? null : (deResult.error || `HTTP ${deResult.statusCode}`)
       outArgs.deUpdateSuccess = deUpdateSuccess
+      console.log(deUpdateSuccess ? '[DE] atualizado com sucesso' : `[DE] falhou: ${deUpdateError}`)
     }
 
     const logEntryRaw: Record<string, unknown> = {
@@ -198,6 +212,8 @@ export default async function executeRoute(req: Request, res: Response): Promise
 
     res.status(200).json(outArgs)
   } catch (err: unknown) {
+    console.log(`[ERRO] excecao no execute: ${err instanceof Error ? err.message : String(err)}`)
+
     const outArgs: OutArgs = {
       httpStatusCode: 0,
       httpStatusClass: '0xx',
