@@ -155,6 +155,7 @@ export default async function executeRoute(req: Request, res: Response): Promise
       success: isSuccess,
       treatErrorsAsOutput: config.treatErrorsAsOutput,
       outArguments: outArgs,
+      requestInput,
       deUpdateSuccess,
       deUpdateError,
       errorSummary: null,

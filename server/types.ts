@@ -66,6 +66,7 @@ export interface LogEntry {
   success: boolean
   treatErrorsAsOutput?: boolean | null
   outArguments?: OutArgs | null
+  requestInput?: Record<string, unknown> | null
   deUpdateSuccess?: boolean | null
   deUpdateError?: string | null
   errorSummary: string | null
