@@ -69,6 +69,7 @@ export interface LogEntry {
   requestInput?: Record<string, unknown> | null
   deUpdateSuccess?: boolean | null
   deUpdateError?: string | null
+  deUpdateSkippedReason?: string | null
   errorSummary: string | null
   message: string
 }

@@ -84,6 +84,7 @@ export function log(entry: LogEntry): void {
     request_input: entry.requestInput ? JSON.stringify(entry.requestInput) : null,
     de_update_success: entry.deUpdateSuccess !== undefined ? entry.deUpdateSuccess : null,
     de_update_error: entry.deUpdateError || null,
+    de_update_skipped_reason: entry.deUpdateSkippedReason || null,
     environment: process.env.NODE_ENV || null
   }
 
