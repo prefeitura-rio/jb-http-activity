@@ -26,6 +26,15 @@
           "url": ""
         },
         {
+          "primaryKeyValue": ""
+        },
+        {
+          "deExternalKey": ""
+        },
+        {
+          "deKeyField": "SubscriberKey"
+        },
+        {
           "headers": "[]"
         },
         {
@@ -62,6 +71,9 @@
         },
         {
           "httpSuccess": false
+        },
+        {
+          "deUpdateSuccess": false
         }
       ],
       "timeout": 30000,

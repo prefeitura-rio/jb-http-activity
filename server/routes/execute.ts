@@ -4,6 +4,7 @@ import { resolveAuth } from '../lib/authHandler'
 import { extract } from '../lib/responseMapper'
 import logger from '../lib/structuredLogger'
 import { log as bigQueryLog } from '../lib/bigQueryLogger'
+import { isSfmcConfigured, updateDataExtensionRow } from '../lib/sfmcDataExtension'
 import { InArgObject, HeaderItem, QueryParamItem, AuthConfig, ResponseMappingItem, BodyData, OutArgs, LogEntry, isInArgArray, isHeaderArray, isQueryParamArray, isAuthConfig, isResponseMappingArray } from '../types'
 
 export default async function executeRoute(req: Request, res: Response): Promise<void> {
@@ -114,6 +115,26 @@ export default async function executeRoute(req: Request, res: Response): Promise
       outArgs._attempts = httpResponse.attempts
     }
 
+    const primaryKeyValue: string | null = typeof config.primaryKeyValue === 'string' && config.primaryKeyValue.trim() !== ''
+      ? config.primaryKeyValue.trim()
+      : null
+
+    const deExternalKey: string | null = typeof config.deExternalKey === 'string' && config.deExternalKey.trim() !== ''
+      ? config.deExternalKey.trim()
+      : null
+
+    const deKeyField: string | undefined = typeof config.deKeyField === 'string' ? config.deKeyField : undefined
+
+    let deUpdateSuccess: boolean | null = null
+    let deUpdateError: string | null = null
+
+    if (isSuccess && config._preview !== true && primaryKeyValue && deExternalKey && isSfmcConfigured()) {
+      const deResult = await updateDataExtensionRow(primaryKeyValue, mapped, deExternalKey, deKeyField)
+      deUpdateSuccess = deResult.success
+      deUpdateError = deResult.success ? null : (deResult.error || `HTTP ${deResult.statusCode}`)
+      outArgs.deUpdateSuccess = deUpdateSuccess
+    }
+
     const logEntryRaw: Record<string, unknown> = {
       journeyId: body && typeof body === 'object' ? (body as Record<string, unknown>).journeyId : undefined,
       contactKey: body && typeof body === 'object' ? (body as Record<string, unknown>).contactKey : undefined,
@@ -126,6 +147,8 @@ export default async function executeRoute(req: Request, res: Response): Promise
       success: isSuccess,
       treatErrorsAsOutput: config.treatErrorsAsOutput,
       outArguments: outArgs,
+      deUpdateSuccess,
+      deUpdateError,
       errorSummary: null,
       message: isSuccess
         ? `HTTP ${statusCode} (${durationMs}ms)`
