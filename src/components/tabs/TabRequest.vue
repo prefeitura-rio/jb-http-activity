@@ -196,7 +196,7 @@ watch(
 .field select, .field input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; box-sizing: border-box; }
 .url-input-row { display: flex; gap: 4px; }
 .field-hint { font-size: 11px; color: #888; margin: 4px 0 0; }
-.url-input-row input { flex: 1; }
+.url-input-row input { flex: 1; min-width: 0; }
 .advanced { border: 1px solid #ddd; border-radius: 4px; padding: 8px; }
 .advanced summary { cursor: pointer; font-size: 12px; font-weight: 600; color: #555; }
 .adv-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
