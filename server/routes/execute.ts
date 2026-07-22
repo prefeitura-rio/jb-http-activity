@@ -135,6 +135,19 @@ export default async function executeRoute(req: Request, res: Response): Promise
 
     let deUpdateSuccess: boolean | null = null
     let deUpdateError: string | null = null
+    let deUpdateSkippedReason: string | null = null
+
+    if (!isSuccess) {
+      deUpdateSkippedReason = 'chamada HTTP externa falhou'
+    } else if (config._preview === true) {
+      deUpdateSkippedReason = 'modo preview'
+    } else if (!primaryKeyValue) {
+      deUpdateSkippedReason = 'primaryKeyValue vazio'
+    } else if (!deExternalKey) {
+      deUpdateSkippedReason = 'deExternalKey vazio'
+    } else if (!isSfmcConfigured()) {
+      deUpdateSkippedReason = 'SFMC nao configurado (SFMC_AUTH_URI/SFMC_CLIENT_ID/SFMC_CLIENT_SECRET)'
+    }
 
     if (isSuccess && config._preview !== true && primaryKeyValue && deExternalKey && isSfmcConfigured()) {
       const deResult = await updateDataExtensionRow(primaryKeyValue, mapped, deExternalKey, deKeyField)
@@ -158,6 +171,7 @@ export default async function executeRoute(req: Request, res: Response): Promise
       requestInput,
       deUpdateSuccess,
       deUpdateError,
+      deUpdateSkippedReason,
       errorSummary: null,
       message: isSuccess
         ? `HTTP ${statusCode} (${durationMs}ms)`
