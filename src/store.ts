@@ -3,6 +3,9 @@ import { reactive } from 'vue'
 interface RequestConfig {
   method: string
   url: string
+  primaryKeyValue: string
+  deExternalKey: string
+  deKeyField: string
   headers: { key: string; value?: string }[]
   queryParams: { key: string; value?: string }[]
   body: string
@@ -17,6 +20,9 @@ interface RequestConfig {
 export const requestConfig = reactive<RequestConfig>({
   method: 'GET',
   url: '',
+  primaryKeyValue: '',
+  deExternalKey: '',
+  deKeyField: 'SubscriberKey',
   headers: [],
   queryParams: [],
   body: '',

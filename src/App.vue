@@ -63,6 +63,9 @@ function getConfig(): Record<string, unknown> {
     activityName: name,
     method: (request.method as string) || 'GET',
     url: (request.url as string) || '',
+    primaryKeyValue: (request.primaryKeyValue as string) || '',
+    deExternalKey: (request.deExternalKey as string) || '',
+    deKeyField: (request.deKeyField as string) || 'SubscriberKey',
     headers: JSON.stringify(request.headers || []),
     queryParams: JSON.stringify(request.queryParams || []),
     body: (request.body as string) || '',
@@ -97,7 +100,8 @@ function getOutputDefinitions(): OutputDef[] {
   const outputs: OutputDef[] = [
     { name: 'httpStatusCode', dataType: 'number', defaultValue: 0 },
     { name: 'httpStatusClass', dataType: 'text', defaultValue: '' },
-    { name: 'httpSuccess', dataType: 'boolean', defaultValue: false }
+    { name: 'httpSuccess', dataType: 'boolean', defaultValue: false },
+    { name: 'deUpdateSuccess', dataType: 'boolean', defaultValue: false }
   ]
 
   for (const m of mappings) {
