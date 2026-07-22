@@ -46,5 +46,6 @@ function insert(): void {
 </script>
 
 <style scoped>
-.var-picker select { width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; }
+.var-picker { flex-shrink: 0; }
+.var-picker select { width: 130px; max-width: 130px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; }
 </style>

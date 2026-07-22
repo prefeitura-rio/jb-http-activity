@@ -113,7 +113,7 @@ async function testConnection() {
 .field label { display: block; font-size: 12px; font-weight: 600; color: #444; margin-bottom: 3px; }
 .field select, .field input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; box-sizing: border-box; }
 .token-row, .secret-row { display: flex; gap: 4px; }
-.token-row input, .secret-row input { flex: 1; }
+.token-row input, .secret-row input { flex: 1; min-width: 0; }
 .oauth-fields { display: flex; flex-direction: column; gap: 10px; }
 .btn-eye { background: #eee; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 4px 8px; }
 .btn-test { background: #0070d2; color: #fff; border: none; border-radius: 4px; padding: 8px; cursor: pointer; font-size: 13px; }
