@@ -109,6 +109,8 @@ export async function updateDataExtensionRow(
     const { accessToken, soapInstanceUrl } = await getAuthContext()
     const resolvedKeyField: string = keyField && keyField.trim() !== '' ? keyField.trim() : 'SubscriberKey'
 
+    console.log(`[DE] gravando na DE ${deExternalKey}: ${resolvedKeyField}=${primaryKeyValue}, campos=${JSON.stringify(values)}`)
+
     const envelope: string = buildUpdateEnvelope(accessToken, deExternalKey, resolvedKeyField, primaryKeyValue, values)
 
     const response = await axios.post(`${soapInstanceUrl}/Service.asmx`, envelope, {
@@ -127,12 +129,18 @@ export async function updateDataExtensionRow(
       return { success: true, statusCode: response.status }
     }
 
+    console.log(`[DE] falha - httpStatus=${response.status} resposta SOAP bruta: ${bodyStr}`)
+
     return {
       success: false,
       statusCode: response.status,
       error: extractSoapError(bodyStr)
     }
   } catch (err: unknown) {
+    console.log(`[DE] excecao ao gravar: ${err instanceof Error ? err.message : String(err)}`)
+    if (axios.isAxiosError(err) && err.response) {
+      console.log(`[DE] resposta de erro do axios: status=${err.response.status} body=${typeof err.response.data === 'string' ? err.response.data : JSON.stringify(err.response.data)}`)
+    }
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Erro desconhecido ao atualizar Data Extension'
