@@ -4,6 +4,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+      inputs:
+        run_checks:
+          description: Run all quality checks
+          required: false
+          default: true
+          type: boolean
 
 permissions:
   contents: read
