@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   quality-gate:
-    uses: prefeitura-rio/actions/.github/workflows/quality-gate.yml@master
+    uses: prefeitura-rio/actions/.github/workflows/quality-gate.yml@quality-gate-latest
     with:
       project-name: jb-http-activity
       working-directory: .
